@@ -77,10 +77,13 @@ ax.plot(proj[0], proj[1], 'go', markersize=12, markerfacecolor='none', label="Pr
 ax.plot([proj[0]-0.5, proj[0]+0.5], [proj[1], proj[1]], 'g', linewidth=2)
 ax.plot([proj[0], proj[0]], [proj[1]-0.5, proj[1]+0.5], 'g', linewidth=2)
 
-# Desplazamiento de etiquetas
-offset = 3  # alejar etiquetas de los puntos
-ax.text(xPT + offset, yPT + offset, "PT", color='red', fontsize=8, fontweight='bold')
-ax.text(proj[3] + offset, proj[3] + offset, "Proy", color='green', fontsize=8, fontweight='bold')
+# Offset independientes
+offset_PT = (0.5, 0.5)     # (desplazamiento X, Y) para PT
+offset_Proy = (0.5, -0.5)  # (desplazamiento X, Y) para Proyección
+
+ax.text(xPT + offset_PT[0], yPT + offset_PT[1], "PT", color='red', fontsize=8, fontweight='bold')
+ax.text(proj[0] + offset_Proy[0], proj[1] + offset_Proy[1], "Proy", color='green', fontsize=8, fontweight='bold')
+
 
 # Distancia perpendicular
 mid_x = (xPT + proj[0]) / 2
@@ -105,6 +108,7 @@ ax.axis("equal")
 ax.legend(fontsize=9)
 
 st.pyplot(fig)
+
 
 
 
