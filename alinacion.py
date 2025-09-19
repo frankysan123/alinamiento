@@ -80,7 +80,7 @@ ax.plot([proj[0], proj[0]], [proj[1]-0.5, proj[1]+0.5], 'g', linewidth=2)
 # Desplazamiento de etiquetas
 offset = 3  # alejar etiquetas de los puntos
 ax.text(xPT + offset, yPT + offset, "PT", color='red', fontsize=8, fontweight='bold')
-ax.text(proj[1] + offset, proj[1] + offset, "Proy", color='green', fontsize=8, fontweight='bold')
+ax.text(proj[3] + offset, proj[3] + offset, "Proy", color='green', fontsize=8, fontweight='bold')
 
 # Distancia perpendicular
 mid_x = (xPT + proj[0]) / 2
@@ -105,6 +105,7 @@ ax.axis("equal")
 ax.legend(fontsize=9)
 
 st.pyplot(fig)
+
 
 
 
