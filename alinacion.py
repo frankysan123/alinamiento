@@ -58,9 +58,9 @@ else:
 st.write(f"Coordenadas de la proyección sobre AB: **({proj[0]:.3f}, {proj[1]:.3f})**")
 st.write(f"Vector de corrección: ΔX = {corr_vector[0]:.3f}, ΔY = {corr_vector[1]:.3f}")
 
-# --- Gráfico Mejorado con Más Zoom y Letras Pequeñas
+# --- Gráfico Mejorado
 st.subheader("📈 Visualización Mejorada")
-fig, ax = plt.subplots(figsize=(8,8))  # tamaño del gráfico
+fig, ax = plt.subplots(figsize=(8,8))  # tamaño más grande para zoom
 
 # Línea AB
 ax.plot([xA, xB], [yA, yB], 'b-', linewidth=2, label="Línea AB")
@@ -77,17 +77,18 @@ ax.plot(proj[0], proj[1], 'go', markersize=12, markerfacecolor='none', label="Pr
 ax.plot([proj[0]-0.5, proj[0]+0.5], [proj[1], proj[1]], 'g', linewidth=2)
 ax.plot([proj[0], proj[0]], [proj[1]-0.5, proj[1]+0.5], 'g', linewidth=2)
 
-# Etiquetas más pequeñas
-ax.text(xPT, yPT, " PT", color='red', fontsize=8, fontweight='bold', ha='right', va='bottom')
-ax.text(proj[0], proj[1], " Proy", color='green', fontsize=8, ha='left', va='bottom')
+# Desplazamiento de etiquetas
+offset = 0.5  # alejar etiquetas de los puntos
+ax.text(xPT + offset, yPT + offset, "PT", color='red', fontsize=8, fontweight='bold')
+ax.text(proj[0] + offset, proj[1] + offset, "Proy", color='green', fontsize=8, fontweight='bold')
 
-# Distancia perpendicular en el gráfico
+# Distancia perpendicular
 mid_x = (xPT + proj[0]) / 2
 mid_y = (yPT + proj[1]) / 2
-ax.text(mid_x, mid_y, f"{dist_perp:.3f} m", color='purple', fontsize=8, fontweight='bold')
+ax.text(mid_x, mid_y + offset, f"{dist_perp:.3f} m", color='purple', fontsize=8, fontweight='bold')
 
 # Ajustes de zoom
-margin = 2  # menos margen = más zoom
+margin = 1.5  # menos margen = más zoom
 min_x = min(xA, xB, xPT, proj[0]) - margin
 max_x = max(xA, xB, xPT, proj[0]) + margin
 min_y = min(yA, yB, yPT, proj[1]) - margin
@@ -104,5 +105,6 @@ ax.axis("equal")
 ax.legend(fontsize=9)
 
 st.pyplot(fig)
+
 
 
