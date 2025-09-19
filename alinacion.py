@@ -8,7 +8,7 @@ st.title("📐 Verificación de alineación de un punto con la línea AB")
 st.markdown("Introduce las coordenadas de dos puntos **A y B** y un punto **PT** (Punto de Trabajo).")
 
 # --- Entradas de usuario
-xA = float(st.text_input("CORD X A", value="1072.998"))
+xA = float(st.text_input("CORD X A", value="  "))
 yA = float(st.text_input("CORD Y A", value="971.948"))
 xB = float(st.text_input("CORD X B", value="963.595"))
 yB = float(st.text_input("CORD Y B", value="1012.893"))
@@ -109,6 +109,7 @@ ax.axis("equal")
 ax.legend(fontsize=9)
 
 st.pyplot(fig)
+
 
 
 
