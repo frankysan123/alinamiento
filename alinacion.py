@@ -58,39 +58,41 @@ else:
 st.write(f"Coordenadas de la proyección sobre AB: **({proj[0]:.3f}, {proj[1]:.3f})**")
 st.write(f"Vector de corrección: ΔX = {corr_vector[0]:.3f}, ΔY = {corr_vector[1]:.3f}")
 
-# --- Gráfico Mejorado
+# --- Gráfico Mejorado con Zoom, Puntos con Cruz y Offsets separados
 st.subheader("📈 Visualización Mejorada")
-fig, ax = plt.subplots(figsize=(8,8))  # tamaño más grande para zoom
+fig, ax = plt.subplots(figsize=(8,8))  # tamaño del gráfico
 
 # Línea AB
-ax.plot([xA, xB], [yA, yB], 'b-', linewidth=2, label="Línea AB")
+ax.plot([xA, xB], [yA, yB], 'b-', linewidth=2, label="Línea AB')
 # Línea perpendicular
 ax.plot([xPT, proj[0]], [yPT, proj[1]], 'r--', linewidth=2, label="Perpendicular")
 
-# Punto PT: círculo con cruz
+# --- Puntos con círculo y cruz
+# PT
 ax.plot(xPT, yPT, 'ro', markersize=12, markerfacecolor='none', label="PT")
 ax.plot([xPT-0.5, xPT+0.5], [yPT, yPT], 'r', linewidth=2)  # cruz horizontal
 ax.plot([xPT, xPT], [yPT-0.5, yPT+0.5], 'r', linewidth=2)  # cruz vertical
 
-# Punto Proyección: círculo con cruz
+# Proyección
 ax.plot(proj[0], proj[1], 'go', markersize=12, markerfacecolor='none', label="Proyección de PT")
 ax.plot([proj[0]-0.5, proj[0]+0.5], [proj[1], proj[1]], 'g', linewidth=2)
 ax.plot([proj[0], proj[0]], [proj[1]-0.5, proj[1]+0.5], 'g', linewidth=2)
 
-# Offset independientes
-offset_PT = (0.5, 0.5)     # (desplazamiento X, Y) para PT
-offset_Proy = (0.5, -0.5)  # (desplazamiento X, Y) para Proyección
+# --- Offsets independientes
+offset_PT = (0.5, 0.5)        # PT: arriba-derecha
+offset_Proy = (0.5, -0.5)     # Proyección: abajo-derecha
+offset_dist = (0.3, 0.3)      # Distancia perpendicular: arriba-derecha
 
+# Etiquetas
 ax.text(xPT + offset_PT[0], yPT + offset_PT[1], "PT", color='red', fontsize=8, fontweight='bold')
 ax.text(proj[0] + offset_Proy[0], proj[1] + offset_Proy[1], "Proy", color='green', fontsize=8, fontweight='bold')
-
 
 # Distancia perpendicular
 mid_x = (xPT + proj[0]) / 2
 mid_y = (yPT + proj[1]) / 2
-ax.text(mid_x, mid_y + offset, f"{dist_perp:.3f} m", color='purple', fontsize=8, fontweight='bold')
+ax.text(mid_x + offset_dist[0], mid_y + offset_dist[1], f"{dist_perp:.3f} m", color='purple', fontsize=8, fontweight='bold')
 
-# Ajustes de zoom
+# --- Ajustes de zoom
 margin = 1.5  # menos margen = más zoom
 min_x = min(xA, xB, xPT, proj[0]) - margin
 max_x = max(xA, xB, xPT, proj[0]) + margin
@@ -108,6 +110,7 @@ ax.axis("equal")
 ax.legend(fontsize=9)
 
 st.pyplot(fig)
+
 
 
 
