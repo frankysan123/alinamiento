@@ -58,35 +58,48 @@ else:
 st.write(f"Coordenadas de la proyección sobre AB: **({proj[0]:.3f}, {proj[1]:.3f})**")
 st.write(f"Vector de corrección: ΔX = {corr_vector[0]:.3f}, ΔY = {corr_vector[1]:.3f}")
 
-# --- Gráfico Mejorado
-st.subheader("📈 Visualización")
-fig, ax = plt.subplots(figsize=(7,7))
+# --- Gráfico Mejorado con Zoom y Puntos con Cruz
+st.subheader("📈 Visualización Mejorada")
+fig, ax = plt.subplots(figsize=(8,8))  # más grande para zoom
 
 # Línea AB
 ax.plot([xA, xB], [yA, yB], 'b-', linewidth=2, label="Línea AB")
 # Línea perpendicular
 ax.plot([xPT, proj[0]], [yPT, proj[1]], 'r--', linewidth=2, label="Perpendicular")
-# Punto PT
-ax.plot(xPT, yPT, 'ro', markersize=10, label="PT")
-# Proyección
-ax.plot(proj[0], proj[1], 'go', markersize=10, label="Proyección de PT")
+
+# Punto PT: círculo con cruz
+ax.plot(xPT, yPT, 'ro', markersize=12, markerfacecolor='none', label="PT")  # círculo vacío
+ax.plot([xPT-0.5, xPT+0.5], [yPT, yPT], 'r', linewidth=2)  # cruz horizontal
+ax.plot([xPT, xPT], [yPT-0.5, yPT+0.5], 'r', linewidth=2)  # cruz vertical
+
+# Punto Proyección: círculo con cruz
+ax.plot(proj[0], proj[1], 'go', markersize=12, markerfacecolor='none', label="Proyección de PT")
+ax.plot([proj[0]-0.5, proj[0]+0.5], [proj[1], proj[1]], 'g', linewidth=2)
+ax.plot([proj[0], proj[0]], [proj[1]-0.5, proj[1]+0.5], 'g', linewidth=2)
+
 # Etiquetas
 ax.text(xPT, yPT, " PT", color='red', fontsize=12, fontweight='bold', ha='right', va='bottom')
 ax.text(proj[0], proj[1], " Proy", color='green', fontsize=12, ha='left', va='bottom')
 
-# Distancia perpendicular en el gráfico
+# Distancia perpendicular
 mid_x = (xPT + proj[0]) / 2
 mid_y = (yPT + proj[1]) / 2
 ax.text(mid_x, mid_y, f"{dist_perp:.3f} m", color='purple', fontsize=10, fontweight='bold')
 
-# Ajustes estéticos
+# Ajustes estéticos y zoom
+margin = 5  # margen extra alrededor de los puntos
+min_x = min(xA, xB, xPT, proj[0]) - margin
+max_x = max(xA, xB, xPT, proj[0]) + margin
+min_y = min(yA, yB, yPT, proj[1]) - margin
+max_y = max(yA, yB, yPT, proj[1]) + margin
+ax.set_xlim(min_x, max_x)
+ax.set_ylim(min_y, max_y)
+
 ax.set_xlabel("X")
 ax.set_ylabel("Y")
 ax.set_title("Alineación de PT respecto a AB")
 ax.grid(True)
 ax.axis("equal")
-ax.set_xlim(min(xA, xB, xPT, proj[0])-5, max(xA, xB, xPT, proj[0])+5)
-ax.set_ylim(min(yA, yB, yPT, proj[1])-5, max(yA, yB, yPT, proj[1])+5)
 ax.legend()
 
 st.pyplot(fig)
