@@ -109,6 +109,8 @@ ax.axis("equal")
 ax.legend(fontsize=9)
 
 st.pyplot(fig)
+if alineado:
+    st.success(f"✅ PT está alineado con AB dentro de la tolerancia de {tol} m")
 
 
 
