@@ -63,7 +63,7 @@ st.subheader("📈 Visualización Mejorada")
 fig, ax = plt.subplots(figsize=(8,8))  # tamaño del gráfico
 
 # Línea AB
-ax.plot([xA, xB], [yA, yB], 'b-', linewidth=2, label="Línea AB')
+ax.plot([xA, xB], [yA, yB], 'b-', linewidth=2, label="Línea AB")
 # Línea perpendicular
 ax.plot([xPT, proj[0]], [yPT, proj[1]], 'r--', linewidth=2, label="Perpendicular")
 
@@ -78,7 +78,7 @@ ax.plot(proj[0], proj[1], 'go', markersize=12, markerfacecolor='none', label="Pr
 ax.plot([proj[0]-0.5, proj[0]+0.5], [proj[1], proj[1]], 'g', linewidth=2)
 ax.plot([proj[0], proj[0]], [proj[1]-0.5, proj[1]+0.5], 'g', linewidth=2)
 
-# --- Offsets independientes
+# --- Offsets independientes para etiquetas
 offset_PT = (0.5, 0.5)        # PT: arriba-derecha
 offset_Proy = (0.5, -0.5)     # Proyección: abajo-derecha
 offset_dist = (0.3, 0.3)      # Distancia perpendicular: arriba-derecha
@@ -110,6 +110,7 @@ ax.axis("equal")
 ax.legend(fontsize=9)
 
 st.pyplot(fig)
+
 
 
 
