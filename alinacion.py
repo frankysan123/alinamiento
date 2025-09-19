@@ -83,9 +83,7 @@ offset_PT = (0.5, 0.5)        # PT: arriba-derecha
 offset_Proy = (0.5, -0.5)     # Proyección: abajo-derecha
 offset_dist = (0.3, 0.3)      # Distancia perpendicular: arriba-derecha
 
-# Etiquetas
-ax.text(xPT + offset_PT[0], yPT + offset_PT[1], "PT", color='red', fontsize=8, fontweight='bold')
-ax.text(proj[0] + offset_Proy[0], proj[1] + offset_Proy[1], "Proy", color='green', fontsize=8, fontweight='bold')
+
 
 # Distancia perpendicular
 mid_x = (xPT + proj[0]) / 2
@@ -110,6 +108,7 @@ ax.axis("equal")
 ax.legend(fontsize=9)
 
 st.pyplot(fig)
+
 
 
 
