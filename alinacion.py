@@ -63,7 +63,7 @@ st.subheader("📈 Visualización Mejorada")
 fig, ax = plt.subplots(figsize=(8,8))  # tamaño del gráfico
 
 # Línea AB
-ax.plot([xA, xB], [yA, yB], 'b-', linewidth=2, label="Línea AB")
+ax.plot([xA, xB], [yA, yB], 'b-', linewidth=1, label="Línea AB")
 # Línea perpendicular
 ax.plot([xPT, proj[0]], [yPT, proj[1]], 'r--', linewidth=2, label="Perpendicular")
 
@@ -109,6 +109,7 @@ ax.axis("equal")
 ax.legend(fontsize=9)
 
 st.pyplot(fig)
+
 
 
 
