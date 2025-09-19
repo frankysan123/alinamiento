@@ -78,7 +78,7 @@ ax.plot([proj[0]-0.5, proj[0]+0.5], [proj[1], proj[1]], 'g', linewidth=2)
 ax.plot([proj[0], proj[0]], [proj[1]-0.5, proj[1]+0.5], 'g', linewidth=2)
 
 # Desplazamiento de etiquetas
-offset = 0.5  # alejar etiquetas de los puntos
+offset = 1  # alejar etiquetas de los puntos
 ax.text(xPT + offset, yPT + offset, "PT", color='red', fontsize=8, fontweight='bold')
 ax.text(proj[0] + offset, proj[1] + offset, "Proy", color='green', fontsize=8, fontweight='bold')
 
@@ -105,6 +105,7 @@ ax.axis("equal")
 ax.legend(fontsize=9)
 
 st.pyplot(fig)
+
 
 
 
