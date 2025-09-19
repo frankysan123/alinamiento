@@ -41,13 +41,13 @@ st.write("Verifica si un punto **P** está alineado con la línea **AB** y obser
 
 # Entradas de usuario
 st.subheader("Coordenadas de los puntos")
-xA = st.number_input("X A", value=1072.998, format="%.3f")
-yA = st.number_input("Y A", value=971.948, format="%.3f")
-xB = st.number_input("X B", value=963.595, format="%.3f")
-yB = st.number_input("Y B", value=1012.893, format="%.3f")
-xP = st.number_input("X PI", value=1040.749, format="%.3f")
-yP = st.number_input("Y I", value=983.875, format="%.3f")
-tol = st.number_input("Tolerancia (m)", value=0.01, format="%.3f")
+xA = float(st.text_input("X A", value=1072.998, format="%.3f")
+yA = float(st.text_input("Y A", value=971.948, format="%.3f")
+xB = float(st.text_input("X B", value=963.595, format="%.3f")
+yB = float(st.text_inputt("Y B", value=1012.893, format="%.3f")
+xP = float(st.text_input("X PI", value=1040.749, format="%.3f")
+yP = float(st.text_input("Y I", value=983.875, format="%.3f")
+tol = float(st.text_input("Tolerancia (m)", value=0.01, format="%.3f")
 
 # Botón de cálculo
 if st.button("Calcular"):
@@ -93,4 +93,5 @@ if st.button("Calcular"):
     ax.axis("equal")
 
     st.pyplot(fig)
+
 
