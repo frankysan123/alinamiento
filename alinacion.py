@@ -1,98 +1,92 @@
 import streamlit as st
-import math
+import numpy as np
 import matplotlib.pyplot as plt
 
-# --- Función principal ---
-def distancia_perpendicular_invertida(A, B, P, tolerancia=0.01):
-    xA, yA = A
-    xB, yB = B
-    xP, yP = P
+st.set_page_config(page_title="Alineación de PT con AB", layout="centered")
 
-    dx = xB - xA
-    dy = yB - yA
-    dx_p = xP - xA
-    dy_p = yP - yA
+st.title("📐 Verificación de alineación de un punto con la línea AB")
+st.markdown("Introduce las coordenadas de dos puntos **A y B** y un punto **PT** (Punto de Trabajo).")
 
-    # Determinante (producto cruzado)
-    det = dx * dy_p - dy * dx_p
-    AB = math.sqrt(dx**2 + dy**2)
+# --- Entradas de usuario
+xA = float(st.text_input("X de A", value="1072.998"))
+yA = float(st.text_input("Y de A", value="971.948"))
+xB = float(st.text_input("X de B", value="963.595"))
+yB = float(st.text_input("Y de B", value="1012.893"))
+xPT = float(st.text_input("X de PT", value="1040.749"))
+yPT = float(st.text_input("Y de PT", value="983.875"))
+tol = float(st.text_input("Tolerancia (m)", value="0.01"))
 
-    # Distancia perpendicular con signo invertido
-    d = -det / AB  
+# --- Funciones
+def distancia_perpendicular(A, B, PT):
+    (xA, yA), (xB, yB), (xPT, yPT) = A, B, PT
+    det = (xB - xA)*(yA - yPT) - (yB - yA)*(xA - xPT)
+    AB = np.sqrt((xB - xA)**2 + (yB - yA)**2)
+    d = -det / AB  # positivo = derecha, negativo = izquierda
+    return d
 
-    # Proyección de P sobre AB
-    t = (dx_p*dx + dy_p*dy) / (dx**2 + dy**2)
-    proj_x = xA + t*dx
-    proj_y = yA + t*dy
+def proyeccion(A, B, PT):
+    A = np.array(A)
+    B = np.array(B)
+    PT = np.array(PT)
+    AB = B - A
+    AP = PT - A
+    t = np.dot(AP, AB) / np.dot(AB, AB)
+    return A + t*AB
 
-    # Vector de corrección
-    corr_x = proj_x - xP
-    corr_y = proj_y - yP
+# --- Cálculos
+A = (xA, yA)
+B = (xB, yB)
+PT = (xPT, yPT)
 
-    alineado = abs(d) <= tolerancia
+d_signed = distancia_perpendicular(A, B, PT)
+d_abs = abs(d_signed)
+proj = proyeccion(A, B, PT)
+corr_vector = proj - np.array(PT)
+alineado = d_abs <= tol
+dist_perp = np.sqrt((proj[0]-xPT)**2 + (proj[1]-yPT)**2)
 
-    return d, alineado, (proj_x, proj_y), (corr_x, corr_y)
+# --- Resultados
+st.subheader("📊 Resultados")
+st.write(f"Distancia perpendicular (con signo) = **{d_signed:.3f} m**")
+if d_signed > 0:
+    st.success("➡️ PT está a la **derecha** de la línea AB")
+elif d_signed < 0:
+    st.warning("⬅️ PT está a la **izquierda** de la línea AB")
+else:
+    st.info("🎯 PT está exactamente sobre la línea AB")
 
-# --- Interfaz Streamlit ---
-st.set_page_config(page_title="Calculadora de Alineación", page_icon="📐")
+st.write(f"Coordenadas de la proyección sobre AB: **({proj[0]:.3f}, {proj[1]:.3f})**")
+st.write(f"Vector de corrección: ΔX = {corr_vector[0]:.3f}, ΔY = {corr_vector[1]:.3f}")
 
-st.title("📐 Calculadora de Alineación (Topografía)")
-st.write("Verifica si un punto **P** está alineado con la línea **AB** y observa la geometría en el gráfico.")
+# --- Gráfico Mejorado
+st.subheader("📈 Visualización")
+fig, ax = plt.subplots(figsize=(7,7))
 
-# Entradas de usuario
-st.subheader("Coordenadas de los puntos")
-xA = float(st.text_input("X A", value=1072.998, format="%.3f"))
-yA = float(st.text_input("Y A", value=971.948, format="%.3f"))
-xB = float(st.text_input("X B", value=963.595, format="%.3f"))
-yB = float(st.text_inputt("Y B", value=1012.893, format="%.3f"))
-xP = float(st.text_input("X PI", value=1040.749, format="%.3f"))
-yP = float(st.text_input("Y PI", value=983.875, format="%.3f"))
-tol = float(st.text_input("Tolerancia (m)", value=0.01, format="%.3f"))
+# Línea AB
+ax.plot([xA, xB], [yA, yB], 'b-', linewidth=2, label="Línea AB")
+# Línea perpendicular
+ax.plot([xPT, proj[0]], [yPT, proj[1]], 'r--', linewidth=2, label="Perpendicular")
+# Punto PT
+ax.plot(xPT, yPT, 'ro', markersize=10, label="PT")
+# Proyección
+ax.plot(proj[0], proj[1], 'go', markersize=10, label="Proyección de PT")
+# Etiquetas
+ax.text(xPT, yPT, " PT", color='red', fontsize=12, fontweight='bold', ha='right', va='bottom')
+ax.text(proj[0], proj[1], " Proy", color='green', fontsize=12, ha='left', va='bottom')
 
-# Botón de cálculo
-if st.button("Calcular"):
-    d, alineado, proyeccion, correccion = distancia_perpendicular_invertida(
-        (xA,yA), (xB,yB), (xP,yP), tol
-    )
+# Distancia perpendicular en el gráfico
+mid_x = (xPT + proj[0]) / 2
+mid_y = (yPT + proj[1]) / 2
+ax.text(mid_x, mid_y, f"{dist_perp:.3f} m", color='purple', fontsize=10, fontweight='bold')
 
-    st.subheader("📊 Resultados")
-    st.write(f"**Distancia perpendicular (con signo):** {d:.3f} m")
-    st.write("**¿Está alineado?**", "✅ Sí" if alineado else "❌ No")
-    st.write(f"**Proyección de P sobre AB:** ({proyeccion[0]:.3f}, {proyeccion[1]:.3f})")
-    st.write(f"**Vector de corrección (mover P):** ΔX = {correccion[0]:.3f}, ΔY = {correccion[1]:.3f}")
-    
-    # Interpretación del signo
-    if d > 0:
-        st.info("➡️ P está a la **derecha** de la línea AB (mirando de A hacia B).")
-    elif d < 0:
-        st.info("⬅️ P está a la **izquierda** de la línea AB (mirando de A hacia B).")
-    else:
-        st.success("🎯 P está exactamente sobre la línea AB.")
+# Ajustes estéticos
+ax.set_xlabel("X")
+ax.set_ylabel("Y")
+ax.set_title("Alineación de PT respecto a AB")
+ax.grid(True)
+ax.axis("equal")
+ax.set_xlim(min(xA, xB, xPT, proj[0])-5, max(xA, xB, xPT, proj[0])+5)
+ax.set_ylim(min(yA, yB, yPT, proj[1])-5, max(yA, yB, yPT, proj[1])+5)
+ax.legend()
 
-    # --- Gráfico con Matplotlib ---
-    fig, ax = plt.subplots()
-
-    # Línea AB
-    ax.plot([xA, xB], [yA, yB], 'b-', label="Línea AB")
-
-    # Punto P
-    ax.plot(xP, yP, 'ro', label="P (punto medido)")
-
-    # Proyección
-    ax.plot(proyeccion[0], proyeccion[1], 'go', label="Proyección de P")
-
-    # Línea perpendicular desde P
-    ax.plot([xP, proyeccion[0]], [yP, proyeccion[1]], 'r--', label="Perpendicular")
-
-    # Estética
-    ax.set_xlabel("X")
-    ax.set_ylabel("Y")
-    ax.set_title("Visualización geométrica")
-    ax.legend()
-    ax.grid(True)
-    ax.axis("equal")
-
-    st.pyplot(fig)
-
-
-
+st.pyplot(fig)
