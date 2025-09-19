@@ -1,5 +1,6 @@
 import streamlit as st
 import math
+import matplotlib.pyplot as plt
 
 # --- Función principal ---
 def distancia_perpendicular_invertida(A, B, P, tolerancia=0.01):
@@ -24,7 +25,7 @@ def distancia_perpendicular_invertida(A, B, P, tolerancia=0.01):
     proj_x = xA + t*dx
     proj_y = yA + t*dy
 
-    # Vector de corrección (hacia la línea)
+    # Vector de corrección
     corr_x = proj_x - xP
     corr_y = proj_y - yP
 
@@ -36,7 +37,7 @@ def distancia_perpendicular_invertida(A, B, P, tolerancia=0.01):
 st.set_page_config(page_title="Calculadora de Alineación", page_icon="📐")
 
 st.title("📐 Calculadora de Alineación (Topografía)")
-st.write("Verifica si un punto **P** está alineado con la línea **AB**.")
+st.write("Verifica si un punto **P** está alineado con la línea **AB** y observa la geometría en el gráfico.")
 
 # Entradas de usuario
 st.subheader("Coordenadas de los puntos")
@@ -48,7 +49,7 @@ xP = st.number_input("X de P", value=1040.749, format="%.3f")
 yP = st.number_input("Y de P", value=983.875, format="%.3f")
 tol = st.number_input("Tolerancia (m)", value=0.01, format="%.3f")
 
-# Botón para calcular
+# Botón de cálculo
 if st.button("Calcular"):
     d, alineado, proyeccion, correccion = distancia_perpendicular_invertida(
         (xA,yA), (xB,yB), (xP,yP), tol
@@ -67,3 +68,28 @@ if st.button("Calcular"):
         st.info("⬅️ P está a la **izquierda** de la línea AB (mirando de A hacia B).")
     else:
         st.success("🎯 P está exactamente sobre la línea AB.")
+
+    # --- Gráfico con Matplotlib ---
+    fig, ax = plt.subplots()
+
+    # Línea AB
+    ax.plot([xA, xB], [yA, yB], 'b-', label="Línea AB")
+
+    # Punto P
+    ax.plot(xP, yP, 'ro', label="P (punto medido)")
+
+    # Proyección
+    ax.plot(proyeccion[0], proyeccion[1], 'go', label="Proyección de P")
+
+    # Línea perpendicular desde P
+    ax.plot([xP, proyeccion[0]], [yP, proyeccion[1]], 'r--', label="Perpendicular")
+
+    # Estética
+    ax.set_xlabel("X")
+    ax.set_ylabel("Y")
+    ax.set_title("Visualización geométrica")
+    ax.legend()
+    ax.grid(True)
+    ax.axis("equal")
+
+    st.pyplot(fig)
