@@ -88,7 +88,7 @@ offset_dist = (0.3, 0.3)      # Distancia perpendicular: arriba-derecha
 # Distancia perpendicular
 mid_x = (xPT + proj[0]) / 2
 mid_y = (yPT + proj[1]) / 2
-offset_dist = (1,1)  # más alejamiento en X y Y
+offset_dist = (2,1)  # más alejamiento en X y Y
 ax.text(mid_x + offset_dist[1], mid_y + offset_dist[1], f"{dist_perp:.3f} m", color='purple', fontsize=8, fontweight='bold')
 
 # --- Ajustes de zoom
@@ -109,6 +109,7 @@ ax.axis("equal")
 ax.legend(fontsize=9)
 
 st.pyplot(fig)
+
 
 
 
