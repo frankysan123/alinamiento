@@ -1,7 +1,6 @@
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.patches import FancyArrowPatch
 
 # Page configuration
 st.set_page_config(
@@ -37,6 +36,15 @@ st.markdown("""
         border-radius: 10px;
         margin: 1rem 0;
     }
+    /* Hide number input arrows */
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    input[type=number] {
+        -moz-appearance: textfield;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -49,16 +57,16 @@ with st.sidebar:
     st.header("🔧 Parámetros de Entrada")
     
     st.subheader("Coordenadas del Punto A")
-    xA = st.number_input("Coordenada X A", value=1072.998, format="%.3f")
-    yA = st.number_input("Coordenada Y A", value=971.948, format="%.3f")
+    xA = st.number_input("Coordenada X A", value=1072.998, format="%.3f", step=None)
+    yA = st.number_input("Coordenada Y A", value=971.948, format="%.3f", step=None)
     
     st.subheader("Coordenadas del Punto B")
-    xB = st.number_input("Coordenada X B", value=963.595, format="%.3f")
-    yB = st.number_input("Coordenada Y B", value=1012.893, format="%.3f")
+    xB = st.number_input("Coordenada X B", value=963.595, format="%.3f", step=None)
+    yB = st.number_input("Coordenada Y B", value=1012.893, format="%.3f", step=None)
     
     st.subheader("Coordenadas del Punto PT")
-    xPT = st.number_input("Coordenada X PT", value=1040.749, format="%.3f")
-    yPT = st.number_input("Coordenada Y PT", value=983.875, format="%.3f")
+    xPT = st.number_input("Coordenada X PT", value=1040.749, format="%.3f", step=None)
+    yPT = st.number_input("Coordenada Y PT", value=983.875, format="%.3f", step=None)
     
     tol = st.slider("Tolerancia (m)", min_value=0.001, max_value=1.0, value=0.01, step=0.001, format="%.3f")
     
@@ -226,26 +234,3 @@ with col4:
 # Footer
 st.markdown("---")
 st.markdown("*Herramienta desarrollada para verificación de alineación topográfica*")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
