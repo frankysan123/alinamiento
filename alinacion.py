@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 # Page configuration
 st.set_page_config(
-    page_title="Alineación de PT con AB", 
+    page_title="Alineación de PC con AB", 
     layout="wide",
     page_icon="📐"
 )
@@ -55,8 +55,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Header
-st.markdown('<div class="main-header">📐 Verificación de Alineación de Punto con Línea AB + División de Segmentos</div>', unsafe_allow_html=True)
-st.markdown("Introduce las coordenadas de dos puntos **A y B** y un punto **PT** (Punto de Trabajo).")
+st.markdown('<div class="main-header">📐 Verificación de Alineación de Punto de Control con Línea AB + División de Segmentos</div>', unsafe_allow_html=True)
+st.markdown("Introduce las coordenadas de dos puntos **A y B** y un punto **PC** (Punto de Control).")
 
 # Sidebar for inputs
 with st.sidebar:
@@ -70,9 +70,9 @@ with st.sidebar:
     xB = float(st.text_input("Coordenada X B", value="963.595"))
     yB = float(st.text_input("Coordenada Y B", value="1012.893"))
     
-    st.subheader("Coordenadas del Punto PT")
-    xPT = float(st.text_input("Coordenada X PT", value="1040.749"))
-    yPT = float(st.text_input("Coordenada Y PT", value="983.875"))
+    st.subheader("Coordenadas del Punto PC")
+    xPC = float(st.text_input("Coordenada X PC", value="1040.749"))
+    yPC = float(st.text_input("Coordenada Y PC", value="983.875"))
     
     tol = st.slider("Tolerancia (m)", 
                     min_value=0.001, 
@@ -91,21 +91,21 @@ with st.sidebar:
                                    help="Divide el segmento AB en partes iguales")
 
 # --- Functions ---
-def distancia_perpendicular(A, B, PT):
-    (xA, yA), (xB, yB), (xPT, yPT) = A, B, PT
-    det = (xB - xA)*(yA - yPT) - (yB - yA)*(xA - xPT)
+def distancia_perpendicular(A, B, PC):
+    (xA, yA), (xB, yB), (xPC, yPC) = A, B, PC
+    det = (xB - xA)*(yA - yPC) - (yB - yA)*(xA - xPC)
     AB = np.sqrt((xB - xA)**2 + (yB - yA)**2)
     if AB == 0:
         return float('inf')  # Points A and B are the same
     d = -det / AB  # positivo = derecha, negativo = izquierda
     return d
 
-def proyeccion(A, B, PT):
+def proyeccion(A, B, PC):
     A = np.array(A)
     B = np.array(B)
-    PT = np.array(PT)
+    PC = np.array(PC)
     AB = B - A
-    AP = PT - A
+    AP = PC - A
     dot_product = np.dot(AP, AB)
     if np.dot(AB, AB) == 0:
         return A  # Points A and B are the same
@@ -134,19 +134,19 @@ def dividir_segmento(A, B, num_partes):
 # --- Calculations ---
 A = (xA, yA)
 B = (xB, yB)
-PT = (xPT, yPT)
+PC = (xPC, yPC)
 
 # Validate that A and B are not the same point
 if calcular_distancia(A, B) < 0.001:
     st.error("❌ Los puntos A y B son demasiado cercanos o iguales. Por favor, ingrese puntos distintos.")
     st.stop()
 
-d_signed = distancia_perpendicular(A, B, PT)
+d_signed = distancia_perpendicular(A, B, PC)
 d_abs = abs(d_signed)
-proj = proyeccion(A, B, PT)
-corr_vector = proj - np.array(PT)
+proj = proyeccion(A, B, PC)
+corr_vector = proj - np.array(PC)
 alineado = d_abs <= tol
-dist_perp = calcular_distancia(PT, proj)
+dist_perp = calcular_distancia(PC, proj)
 dist_AB = calcular_distancia(A, B)
 
 # Calculate division points
@@ -169,20 +169,20 @@ with col1:
     # Position indicator
     if alineado:
         st.markdown('<div class="success-box">', unsafe_allow_html=True)
-        st.success(f"✅ **PT está ALINEADO** con AB (dentro de la tolerancia de {tol} m)")
+        st.success(f"✅ **PC está ALINEADO** con AB (dentro de la tolerancia de {tol} m)")
         st.markdown('</div>', unsafe_allow_html=True)
     else:
         st.markdown('<div class="warning-box">', unsafe_allow_html=True)
-        st.warning(f"⚠️ **PT NO está alineado** con AB (fuera de tolerancia de {tol} m)")
+        st.warning(f"⚠️ **PC NO está alineado** con AB (fuera de tolerancia de {tol} m)")
         st.markdown('</div>', unsafe_allow_html=True)
     
     # Direction indicator
     if d_signed > 0:
-        st.info("📍 **PT está a la DERECHA** de la línea AB")
+        st.info("📍 **PC está a la DERECHA** de la línea AB")
     elif d_signed < 0:
-        st.info("📍 **PT está a la IZQUIERDA** de la línea AB")
+        st.info("📍 **PC está a la IZQUIERDA** de la línea AB")
     else:
-        st.info("🎯 **PT está exactamente sobre** la línea AB")
+        st.info("🎯 **PC está exactamente sobre** la línea AB")
     
     # Projection details
     st.subheader("📐 Detalles de Proyección")
@@ -228,7 +228,7 @@ with col2:
     ax.plot([xA, xB], [yA, yB], 'b-', linewidth=3, label="Línea AB", alpha=0.7)
     
     # Perpendicular line
-    ax.plot([xPT, proj[0]], [yPT, proj[1]], 'r--', linewidth=2, label="Distancia perpendicular", alpha=0.7)
+    ax.plot([xPC, proj[0]], [yPC, proj[1]], 'r--', linewidth=2, label="Distancia perpendicular", alpha=0.7)
     
     # Division points
     division_x = [p[0] for p in puntos_division]
@@ -252,20 +252,20 @@ with col2:
     ax.plot(xB, yB, 'bo', markersize=8)
     
     # Distance annotation with arrow
-    mid_x = (xPT + proj[0]) / 2
-    mid_y = (yPT + proj[1]) / 2
+    mid_x = (xPC + proj[0]) / 2
+    mid_y = (yPC + proj[1]) / 2
     
     # Add perpendicular distance annotation
-    ax.annotate('', xy=(proj[0], proj[1]), xytext=(xPT, yPT),
+    ax.annotate('', xy=(proj[0], proj[1]), xytext=(xPC, yPC),
                 arrowprops=dict(arrowstyle='<->', color='purple', lw=1.5))
     
-    # Point PT
-    ax.plot(xPT, yPT, 'ro', markersize=12, markerfacecolor='red', label="Punto PT")
-    
+    # Point PC
+    ax.plot(xPC, yPC, 'ro', markersize=12, markerfacecolor='red', label="Punto de Control (PC)")
+    ax.text(xPC, yPC, '  PC', verticalalignment='center', fontweight='bold', color='red')
     
     # Projection point
     ax.plot(proj[0], proj[1], 'gs', markersize=10, label="Proyección")
-   
+    ax.text(proj[0], proj[1], '  Proy', verticalalignment='center', fontweight='bold', color='green')
 
     # Distance label
     offset_x = 6
@@ -276,10 +276,10 @@ with col2:
     
     # Adjust plot limits with margin
     margin = max(dist_perp, dist_AB * 0.1) + 2
-    min_x = min(xA, xB, xPT, proj[0]) - margin
-    max_x = max(xA, xB, xPT, proj[0]) + margin
-    min_y = min(yA, yB, yPT, proj[1]) - margin
-    max_y = max(yA, yB, yPT, proj[1]) + margin
+    min_x = min(xA, xB, xPC, proj[0]) - margin
+    max_x = max(xA, xB, xPC, proj[0]) + margin
+    min_y = min(yA, yB, yPC, proj[1]) - margin
+    max_y = max(yA, yB, yPC, proj[1]) + margin
     
     ax.set_xlim(min_x, max_x)
     ax.set_ylim(min_y, max_y)
@@ -287,7 +287,7 @@ with col2:
     # Plot aesthetics
     ax.set_xlabel("Coordenada X (m)")
     ax.set_ylabel("Coordenada Y (m)")
-    ax.set_title(f"Visualización de Alineación PT-AB + División en {num_divisions} Partes", 
+    ax.set_title(f"Visualización de Alineación PC-AB + División en {num_divisions} Partes", 
                  fontsize=14, fontweight='bold')
     ax.grid(True, alpha=0.3)
     ax.axis('equal')
@@ -301,9 +301,9 @@ col3, col4 = st.columns(2)
 
 with col3:
     st.write("**Interpretación de resultados:**")
-    st.write("- **Distancia positiva**: PT a la derecha de AB")
-    st.write("- **Distancia negativa**: PT a la izquierda de AB")
-    st.write("- **Distancia cero**: PT sobre la línea AB")
+    st.write("- **Distancia positiva**: PC a la derecha de AB")
+    st.write("- **Distancia negativa**: PC a la izquierda de AB")
+    st.write("- **Distancia cero**: PC sobre la línea AB")
     st.write("**División del segmento:**")
     st.write(f"- P0 = Punto A")
     st.write(f"- P{num_divisions} = Punto B")
@@ -322,4 +322,3 @@ with col4:
 # Footer
 st.markdown("---")
 st.markdown("*Herramienta desarrollada para verificación de alineación topográfica y división de segmentos*")
-
