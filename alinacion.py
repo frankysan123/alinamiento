@@ -192,7 +192,7 @@ with col2:
                 arrowprops=dict(arrowstyle='<->', color='purple', lw=1.5))
     
     ax.text(mid_x, mid_y, f'd = {dist_perp:.3f} m', 
-            backgroundcolor='white', fontsize=10, fontweight='bold', 
+            backgroundcolor='white', fontsize=20, fontweight='bold', 
             bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8))
     
     # Adjust plot limits with margin
@@ -234,5 +234,6 @@ with col4:
 # Footer
 st.markdown("---")
 st.markdown("*Herramienta desarrollada para verificación de alineación topográfica*")
+
 
 
