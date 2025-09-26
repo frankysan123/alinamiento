@@ -183,6 +183,14 @@ with col2:
     # Add perpendicular distance annotation
     ax.annotate('', xy=(proj[0], proj[1]), xytext=(xPT, yPT),
     arrowprops=dict(arrowstyle='<->', color='purple', lw=1.5))
+    
+    # Point PT
+    ax.plot(xPT, yPT, 'ro', markersize=12, markerfacecolor='red', label="Punto PT")
+   
+    
+    # Projection point
+    ax.plot(proj[0], proj[1], 'gs', markersize=10, label="Proyección")
+    
 
     # Desplazar un poco la etiqueta (ejemplo: +0.5 en Y)
     offset_x = 3
@@ -232,6 +240,7 @@ with col4:
 # Footer
 st.markdown("---")
 st.markdown("*Herramienta desarrollada para verificación de alineación topográfica*")
+
 
 
 
