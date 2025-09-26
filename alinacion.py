@@ -187,13 +187,18 @@ with col2:
     mid_x = (xPT + proj[0]) / 2
     mid_y = (yPT + proj[1]) / 2
     
-    # Add perpendicular distance annotation
-    ax.annotate('', xy=(proj[0], proj[1]), xytext=(xPT, yPT),
-                arrowprops=dict(arrowstyle='<->', color='purple', lw=1.5))
-    
-    ax.text(mid_x, mid_y, f'd = {dist_perp:.3f} m', 
-            backgroundcolor='white', fontsize=10, fontweight='bold', 
-            bbox=dict(boxstyle="round,pad=0.5", facecolor="white", alpha=0.8))
+  # Add perpendicular distance annotation
+ax.annotate('', xy=(proj[0], proj[1]), xytext=(xPT, yPT),
+            arrowprops=dict(arrowstyle='<->', color='purple', lw=1.5))
+
+# Desplazar un poco la etiqueta (ejemplo: +0.5 en Y)
+offset_x = 0.5
+offset_y = 0.5
+
+ax.text(mid_x + offset_x, mid_y + offset_y, f'd = {dist_perp:.3f} m',
+        backgroundcolor='white', fontsize=10, fontweight='bold',
+        bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8))
+
     
     # Adjust plot limits with margin
     margin = max(dist_perp, dist_AB * 0.1) + 2
@@ -234,6 +239,7 @@ with col4:
 # Footer
 st.markdown("---")
 st.markdown("*Herramienta desarrollada para verificación de alineación topográfica*")
+
 
 
 
