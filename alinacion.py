@@ -36,6 +36,12 @@ st.markdown("""
         border-radius: 10px;
         margin: 1rem 0;
     }
+    .division-box {
+        background-color: #e8f4fd;
+        padding: 1rem;
+        border-radius: 10px;
+        margin: 1rem 0;
+    }
     /* Hide number input arrows */
     input[type=number]::-webkit-outer-spin-button,
     input[type=number]::-webkit-inner-spin-button {
@@ -49,7 +55,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Header
-st.markdown('<div class="main-header">📐 Verificación de Alineación de Punto con Línea AB</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-header">📐 Verificación de Alineación de Punto con Línea AB + División de Segmentos</div>', unsafe_allow_html=True)
 st.markdown("Introduce las coordenadas de dos puntos **A y B** y un punto **PT** (Punto de Trabajo).")
 
 # Sidebar for inputs
@@ -74,6 +80,15 @@ with st.sidebar:
                     value=0.01, 
                     step=0.001, 
                     format="%.3f")
+    
+    # New: Segment division option
+    st.subheader("🔢 División del Segmento AB")
+    num_divisions = st.number_input("Número de divisiones", 
+                                   min_value=1, 
+                                   max_value=20, 
+                                   value=5, 
+                                   step=1,
+                                   help="Divide el segmento AB en partes iguales")
 
 # --- Functions ---
 def distancia_perpendicular(A, B, PT):
@@ -100,6 +115,22 @@ def proyeccion(A, B, PT):
 def calcular_distancia(p1, p2):
     return np.sqrt((p2[0]-p1[0])**2 + (p2[1]-p1[1])**2)
 
+def dividir_segmento(A, B, num_partes):
+    """
+    Divide el segmento AB en num_partes iguales
+    Retorna lista de puntos incluyendo A y B
+    """
+    A = np.array(A)
+    B = np.array(B)
+    puntos = []
+    
+    for i in range(num_partes + 1):
+        t = i / num_partes
+        punto = A + t * (B - A)
+        puntos.append((float(punto[0]), float(punto[1])))
+    
+    return puntos
+
 # --- Calculations ---
 A = (xA, yA)
 B = (xB, yB)
@@ -117,6 +148,10 @@ corr_vector = proj - np.array(PT)
 alineado = d_abs <= tol
 dist_perp = calcular_distancia(PT, proj)
 dist_AB = calcular_distancia(A, B)
+
+# Calculate division points
+puntos_division = dividir_segmento(A, B, num_divisions)
+longitud_entre_puntos = dist_AB / num_divisions
 
 # --- Results Display ---
 col1, col2 = st.columns([1, 1])
@@ -153,28 +188,68 @@ with col1:
     st.subheader("📐 Detalles de Proyección")
     st.write(f"**Coordenadas de proyección:** ({proj[0]:.3f}, {proj[1]:.3f})")
     st.write(f"**Vector de corrección:** ΔX = {corr_vector[0]:.3f} m, ΔY = {corr_vector[1]:.3f} m")
+    
+    # Division results
+    st.subheader("📏 División del Segmento AB")
+    st.markdown('<div class="division-box">', unsafe_allow_html=True)
+    st.write(f"**Segmento AB dividido en {num_divisions} partes iguales**")
+    st.write(f"**Longitud entre puntos:** {longitud_entre_puntos:.3f} m")
+    st.write(f"**Total de puntos generados:** {len(puntos_division)}")
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Division points table
+    st.subheader("📋 Coordenadas de los Puntos de División")
+    division_data = []
+    for i, punto in enumerate(puntos_division):
+        distancia_desde_A = calcular_distancia(A, punto)
+        division_data.append({
+            "Punto": f"P{i}",
+            "X": f"{punto[0]:.3f}",
+            "Y": f"{punto[1]:.3f}",
+            "Distancia desde A": f"{distancia_desde_A:.3f} m"
+        })
+    
+    # Show first few points with expander for all points
+    st.table(division_data[:6])  # Show first 6 points
+    
+    if len(division_data) > 6:
+        with st.expander("Ver todos los puntos"):
+            for i in range(6, len(division_data)):
+                punto = division_data[i]
+                st.write(f"{punto['Punto']}: X={punto['X']}, Y={punto['Y']}, Distancia A={punto['Distancia desde A']}")
 
 with col2:
     st.subheader("📈 Visualización Gráfica")
     
     # Create the plot
-    fig, ax = plt.subplots(figsize=(10, 8))
+    fig, ax = plt.subplots(figsize=(12, 10))
     
     # Line AB
-    ax.plot([xA, xB], [yA, yB], 'b-', linewidth=2, label="Línea AB", alpha=0.7)
+    ax.plot([xA, xB], [yA, yB], 'b-', linewidth=3, label="Línea AB", alpha=0.7)
     
     # Perpendicular line
     ax.plot([xPT, proj[0]], [yPT, proj[1]], 'r--', linewidth=2, label="Distancia perpendicular", alpha=0.7)
     
+    # Division points
+    division_x = [p[0] for p in puntos_division]
+    division_y = [p[1] for p in puntos_division]
+    ax.scatter(division_x, division_y, c='orange', s=50, alpha=0.7, label=f"Puntos de división ({num_divisions} partes)")
+    
+    # Label division points
+    for i, (x, y) in enumerate(puntos_division):
+        if i == 0:  # Point A
+            ax.text(x, y, '  A', verticalalignment='center', fontweight='bold', fontsize=10)
+        elif i == len(puntos_division) - 1:  # Point B
+            ax.text(x, y, '  B', verticalalignment='center', fontweight='bold', fontsize=10)
+        else:
+            ax.text(x, y, f'  P{i}', verticalalignment='center', fontsize=8, alpha=0.8)
+    
     # Points with enhanced styling
-    # Point A
-    ax.plot(xA, yA, 'bo', markersize=10, label="Punto A")
-    ax.text(xA, yA, '  A', verticalalignment='center', fontweight='bold')
+    # Point A (already labeled above)
+    ax.plot(xA, yA, 'bo', markersize=8)
     
-    # Point B
-    ax.plot(xB, yB, 'bo', markersize=10, label="Punto B")
-    ax.text(xB, yB, '  B', verticalalignment='center', fontweight='bold')
-    
+    # Point B (already labeled above)
+    ax.plot(xB, yB, 'bo', markersize=8)
     
     # Distance annotation with arrow
     mid_x = (xPT + proj[0]) / 2
@@ -182,24 +257,22 @@ with col2:
     
     # Add perpendicular distance annotation
     ax.annotate('', xy=(proj[0], proj[1]), xytext=(xPT, yPT),
-    arrowprops=dict(arrowstyle='<->', color='purple', lw=1.5))
+                arrowprops=dict(arrowstyle='<->', color='purple', lw=1.5))
     
     # Point PT
-    ax.plot(xPT, yPT, 'ro', markersize=15, markerfacecolor='red', label="Punto PT")
-   
+    ax.plot(xPT, yPT, 'ro', markersize=12, markerfacecolor='red', label="Punto PT")
+    ax.text(xPT, yPT, '  PT', verticalalignment='center', fontweight='bold', color='red')
     
     # Projection point
     ax.plot(proj[0], proj[1], 'gs', markersize=10, label="Proyección")
-    
+    ax.text(proj[0], proj[1], '  Proy', verticalalignment='center', fontweight='bold', color='green')
 
-    # Desplazar un poco la etiqueta (ejemplo: +0.5 en Y)
+    # Distance label
     offset_x = 6
     offset_y = 6
-
     ax.text(mid_x + offset_x, mid_y + offset_y, f'd = {dist_perp:.3f} m',
-    backgroundcolor='white', fontsize=10, fontweight='bold',
-    bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8))
-
+            backgroundcolor='white', fontsize=10, fontweight='bold',
+            bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8))
     
     # Adjust plot limits with margin
     margin = max(dist_perp, dist_AB * 0.1) + 2
@@ -214,7 +287,8 @@ with col2:
     # Plot aesthetics
     ax.set_xlabel("Coordenada X (m)")
     ax.set_ylabel("Coordenada Y (m)")
-    ax.set_title("Visualización de Alineación PT-AB", fontsize=14, fontweight='bold')
+    ax.set_title(f"Visualización de Alineación PT-AB + División en {num_divisions} Partes", 
+                 fontsize=14, fontweight='bold')
     ax.grid(True, alpha=0.3)
     ax.axis('equal')
     ax.legend()
@@ -230,30 +304,21 @@ with col3:
     st.write("- **Distancia positiva**: PT a la derecha de AB")
     st.write("- **Distancia negativa**: PT a la izquierda de AB")
     st.write("- **Distancia cero**: PT sobre la línea AB")
+    st.write("**División del segmento:**")
+    st.write(f"- P0 = Punto A")
+    st.write(f"- P{num_divisions} = Punto B")
+    st.write(f"- Cada segmento mide {longitud_entre_puntos:.3f} m")
 
 with col4:
     st.write("**Recomendaciones:**")
     st.write("- Ajuste la tolerancia según la precisión requerida")
     st.write("- Verifique que los puntos A y B sean distintos")
     st.write("- Use el vector de corrección para ajustar la posición")
+    st.write("- Los puntos de división son útiles para:")
+    st.write("  • Estacas intermedias en topografía")
+    st.write("  • Puntos de referencia en construcción")
+    st.write("  • Muestreo equidistante a lo largo de AB")
 
 # Footer
 st.markdown("---")
-st.markdown("*Herramienta desarrollada para verificación de alineación topográfica*")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+st.markdown("*Herramienta desarrollada para verificación de alineación topográfica y división de segmentos*")
