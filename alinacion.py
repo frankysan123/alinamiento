@@ -261,15 +261,15 @@ with col2:
     
     # Point PC
     ax.plot(xPC, yPC, 'ro', markersize=12, markerfacecolor='red', label="Punto de Control (PC)")
-    ax.text(xPC, yPC, '  PC', verticalalignment='center', fontweight='bold', color='red')
+    
     
     # Projection point
     ax.plot(proj[0], proj[1], 'gs', markersize=10, label="Proyección")
-    ax.text(proj[0], proj[1], '  Proy', verticalalignment='center', fontweight='bold', color='green')
+   
 
     # Distance label
-    offset_x = 6
-    offset_y = 6
+    offset_x = 7
+    offset_y = 7
     ax.text(mid_x + offset_x, mid_y + offset_y, f'd = {dist_perp:.3f} m',
             backgroundcolor='white', fontsize=10, fontweight='bold',
             bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8))
@@ -322,3 +322,4 @@ with col4:
 # Footer
 st.markdown("---")
 st.markdown("*Herramienta desarrollada para verificación de alineación topográfica y división de segmentos*")
+
