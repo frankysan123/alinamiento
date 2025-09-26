@@ -57,19 +57,23 @@ with st.sidebar:
     st.header("🔧 Parámetros de Entrada")
     
     st.subheader("Coordenadas del Punto A")
-    xA = st.number_input("Coordenada X A", value=1072.998, format="%.3f", step=None)
-    yA = st.number_input("Coordenada Y A", value=971.948, format="%.3f", step=None)
+    xA = float(st.text_input("Coordenada X A", value="1072.998"))
+    yA = float(st.text_input("Coordenada Y A", value="971.948"))
     
     st.subheader("Coordenadas del Punto B")
-    xB = st.number_input("Coordenada X B", value=963.595, format="%.3f", step=None)
-    yB = st.number_input("Coordenada Y B", value=1012.893, format="%.3f", step=None)
+    xB = float(st.text_input("Coordenada X B", value="963.595"))
+    yB = float(st.text_input("Coordenada Y B", value="1012.893"))
     
     st.subheader("Coordenadas del Punto PT")
-    xPT = st.number_input("Coordenada X PT", value=1040.749, format="%.3f", step=None)
-    yPT = st.number_input("Coordenada Y PT", value=983.875, format="%.3f", step=None)
+    xPT = float(st.text_input("Coordenada X PT", value="1040.749"))
+    yPT = float(st.text_input("Coordenada Y PT", value="983.875"))
     
-    tol = st.slider("Tolerancia (m)", min_value=0.001, max_value=1.0, value=0.01, step=0.001, format="%.3f")
-    
+    tol = st.slider("Tolerancia (m)", 
+                    min_value=0.001, 
+                    max_value=1.0, 
+                    value=0.01, 
+                    step=0.001, 
+                    format="%.3f")
 
 # --- Functions ---
 def distancia_perpendicular(A, B, PT):
@@ -230,4 +234,5 @@ with col4:
 # Footer
 st.markdown("---")
 st.markdown("*Herramienta desarrollada para verificación de alineación topográfica*")
+
 
