@@ -70,10 +70,6 @@ with st.sidebar:
     
     tol = st.slider("Tolerancia (m)", min_value=0.001, max_value=1.0, value=0.01, step=0.001, format="%.3f")
     
-    # Quick actions
-    st.subheader("Acciones Rápidas")
-    if st.button("🔁 Restablecer Valores por Defecto"):
-        st.rerun()
 
 # --- Functions ---
 def distancia_perpendicular(A, B, PT):
@@ -234,3 +230,4 @@ with col4:
 # Footer
 st.markdown("---")
 st.markdown("*Herramienta desarrollada para verificación de alineación topográfica*")
+
