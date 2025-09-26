@@ -175,13 +175,6 @@ with col2:
     ax.plot(xB, yB, 'bo', markersize=10, label="Punto B")
     ax.text(xB, yB, '  B', verticalalignment='center', fontweight='bold')
     
-    # Point PT
-    ax.plot(xPT, yPT, 'ro', markersize=12, markerfacecolor='red', label="Punto PT")
-    ax.text(xPT, yPT, '  PT', verticalalignment='center', fontweight='bold', color='red')
-    
-    # Projection point
-    ax.plot(proj[0], proj[1], 'gs', markersize=10, label="Proyección")
-    ax.text(proj[0], proj[1], '  Proyección', verticalalignment='center', fontweight='bold', color='green')
     
     # Distance annotation with arrow
     mid_x = (xPT + proj[0]) / 2
@@ -239,6 +232,7 @@ with col4:
 # Footer
 st.markdown("---")
 st.markdown("*Herramienta desarrollada para verificación de alineación topográfica*")
+
 
 
 
