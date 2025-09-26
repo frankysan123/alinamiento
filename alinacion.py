@@ -1,26 +1,79 @@
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.patches import FancyArrowPatch
 
-st.set_page_config(page_title="Alineación de PT con AB", layout="centered")
+# Page configuration
+st.set_page_config(
+    page_title="Alineación de PT con AB", 
+    layout="wide",
+    page_icon="📐"
+)
 
-st.title("📐 Verificación de alineación de un punto con la línea AB")
+# Custom CSS for better styling
+st.markdown("""
+<style>
+    .main-header {
+        font-size: 2.5rem;
+        color: #1f77b4;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    .result-box {
+        background-color: #f0f2f6;
+        padding: 1rem;
+        border-radius: 10px;
+        margin: 1rem 0;
+    }
+    .success-box {
+        background-color: #d4edda;
+        padding: 1rem;
+        border-radius: 10px;
+        margin: 1rem 0;
+    }
+    .warning-box {
+        background-color: #fff3cd;
+        padding: 1rem;
+        border-radius: 10px;
+        margin: 1rem 0;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# Header
+st.markdown('<div class="main-header">📐 Verificación de Alineación de Punto con Línea AB</div>', unsafe_allow_html=True)
 st.markdown("Introduce las coordenadas de dos puntos **A y B** y un punto **PT** (Punto de Trabajo).")
 
-# --- Entradas de usuario
-xA = float(st.text_input("CORD X A", value="1072.998"))
-yA = float(st.text_input("CORD Y A", value="971.948"))
-xB = float(st.text_input("CORD X B", value="963.595"))
-yB = float(st.text_input("CORD Y B", value="1012.893"))
-xPT = float(st.text_input("CORD X PI", value="1040.749"))
-yPT = float(st.text_input("CORD Y PI", value="983.875"))
-tol = float(st.text_input("Tolerancia (m)", value="0.01"))
+# Sidebar for inputs
+with st.sidebar:
+    st.header("🔧 Parámetros de Entrada")
+    
+    st.subheader("Coordenadas del Punto A")
+    xA = st.number_input("Coordenada X A", value=1072.998, format="%.3f")
+    yA = st.number_input("Coordenada Y A", value=971.948, format="%.3f")
+    
+    st.subheader("Coordenadas del Punto B")
+    xB = st.number_input("Coordenada X B", value=963.595, format="%.3f")
+    yB = st.number_input("Coordenada Y B", value=1012.893, format="%.3f")
+    
+    st.subheader("Coordenadas del Punto PT")
+    xPT = st.number_input("Coordenada X PT", value=1040.749, format="%.3f")
+    yPT = st.number_input("Coordenada Y PT", value=983.875, format="%.3f")
+    
+    tol = st.slider("Tolerancia (m)", min_value=0.001, max_value=1.0, value=0.01, step=0.001, format="%.3f")
+    
+    # Quick actions
+    st.subheader("Acciones Rápidas")
+    if st.button("🔁 Restablecer Valores por Defecto"):
+        st.rerun()
 
-# --- Funciones
+# --- Functions ---
 def distancia_perpendicular(A, B, PT):
     (xA, yA), (xB, yB), (xPT, yPT) = A, B, PT
     det = (xB - xA)*(yA - yPT) - (yB - yA)*(xA - xPT)
     AB = np.sqrt((xB - xA)**2 + (yB - yA)**2)
+    if AB == 0:
+        return float('inf')  # Points A and B are the same
     d = -det / AB  # positivo = derecha, negativo = izquierda
     return d
 
@@ -30,87 +83,149 @@ def proyeccion(A, B, PT):
     PT = np.array(PT)
     AB = B - A
     AP = PT - A
-    t = np.dot(AP, AB) / np.dot(AB, AB)
+    dot_product = np.dot(AP, AB)
+    if np.dot(AB, AB) == 0:
+        return A  # Points A and B are the same
+    t = dot_product / np.dot(AB, AB)
     return A + t*AB
 
-# --- Cálculos
+def calcular_distancia(p1, p2):
+    return np.sqrt((p2[0]-p1[0])**2 + (p2[1]-p1[1])**2)
+
+# --- Calculations ---
 A = (xA, yA)
 B = (xB, yB)
 PT = (xPT, yPT)
+
+# Validate that A and B are not the same point
+if calcular_distancia(A, B) < 0.001:
+    st.error("❌ Los puntos A y B son demasiado cercanos o iguales. Por favor, ingrese puntos distintos.")
+    st.stop()
 
 d_signed = distancia_perpendicular(A, B, PT)
 d_abs = abs(d_signed)
 proj = proyeccion(A, B, PT)
 corr_vector = proj - np.array(PT)
 alineado = d_abs <= tol
-dist_perp = np.sqrt((proj[0]-xPT)**2 + (proj[1]-yPT)**2)
+dist_perp = calcular_distancia(PT, proj)
+dist_AB = calcular_distancia(A, B)
 
-# --- Resultados
-st.subheader("📊 Resultados")
-st.write(f"Distancia perpendicular (con signo) = **{d_signed:.3f} m**")
-if d_signed > 0:
-    st.success("➡️ PT está a la **derecha** de la línea AB")
-elif d_signed < 0:
-    st.warning("⬅️ PT está a la **izquierda** de la línea AB")
-else:
-    st.info("🎯 PT está exactamente sobre la línea AB")
+# --- Results Display ---
+col1, col2 = st.columns([1, 1])
 
-st.write(f"Coordenadas de la proyección sobre AB: **({proj[0]:.3f}, {proj[1]:.3f})**")
-st.write(f"Vector de corrección: ΔX = {corr_vector[0]:.3f}, ΔY = {corr_vector[1]:.3f}")
+with col1:
+    st.subheader("📊 Resultados de Alineación")
+    
+    # Distance results
+    with st.container():
+        st.markdown('<div class="result-box">', unsafe_allow_html=True)
+        st.metric("Distancia perpendicular absoluta", f"{d_abs:.3f} m", delta=f"{d_signed:.3f} m")
+        st.metric("Distancia del segmento AB", f"{dist_AB:.3f} m")
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Position indicator
+    if alineado:
+        st.markdown('<div class="success-box">', unsafe_allow_html=True)
+        st.success(f"✅ **PT está ALINEADO** con AB (dentro de la tolerancia de {tol} m)")
+        st.markdown('</div>', unsafe_allow_html=True)
+    else:
+        st.markdown('<div class="warning-box">', unsafe_allow_html=True)
+        st.warning(f"⚠️ **PT NO está alineado** con AB (fuera de tolerancia de {tol} m)")
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Direction indicator
+    if d_signed > 0:
+        st.info("📍 **PT está a la DERECHA** de la línea AB")
+    elif d_signed < 0:
+        st.info("📍 **PT está a la IZQUIERDA** de la línea AB")
+    else:
+        st.info("🎯 **PT está exactamente sobre** la línea AB")
+    
+    # Projection details
+    st.subheader("📐 Detalles de Proyección")
+    st.write(f"**Coordenadas de proyección:** ({proj[0]:.3f}, {proj[1]:.3f})")
+    st.write(f"**Vector de corrección:** ΔX = {corr_vector[0]:.3f} m, ΔY = {corr_vector[1]:.3f} m")
 
-# --- Gráfico Mejorado con Zoom, Puntos con Cruz y Offsets separados
-st.subheader("📈 Visualización Mejorada")
-fig, ax = plt.subplots(figsize=(8,8))  # tamaño del gráfico
+with col2:
+    st.subheader("📈 Visualización Gráfica")
+    
+    # Create the plot
+    fig, ax = plt.subplots(figsize=(10, 8))
+    
+    # Line AB
+    ax.plot([xA, xB], [yA, yB], 'b-', linewidth=2, label="Línea AB", alpha=0.7)
+    
+    # Perpendicular line
+    ax.plot([xPT, proj[0]], [yPT, proj[1]], 'r--', linewidth=2, label="Distancia perpendicular", alpha=0.7)
+    
+    # Points with enhanced styling
+    # Point A
+    ax.plot(xA, yA, 'bo', markersize=10, label="Punto A")
+    ax.text(xA, yA, '  A', verticalalignment='center', fontweight='bold')
+    
+    # Point B
+    ax.plot(xB, yB, 'bo', markersize=10, label="Punto B")
+    ax.text(xB, yB, '  B', verticalalignment='center', fontweight='bold')
+    
+    # Point PT
+    ax.plot(xPT, yPT, 'ro', markersize=12, markerfacecolor='red', label="Punto PT")
+    ax.text(xPT, yPT, '  PT', verticalalignment='center', fontweight='bold', color='red')
+    
+    # Projection point
+    ax.plot(proj[0], proj[1], 'gs', markersize=10, label="Proyección")
+    ax.text(proj[0], proj[1], '  Proyección', verticalalignment='center', fontweight='bold', color='green')
+    
+    # Distance annotation with arrow
+    mid_x = (xPT + proj[0]) / 2
+    mid_y = (yPT + proj[1]) / 2
+    
+    # Add perpendicular distance annotation
+    ax.annotate('', xy=(proj[0], proj[1]), xytext=(xPT, yPT),
+                arrowprops=dict(arrowstyle='<->', color='purple', lw=1.5))
+    
+    ax.text(mid_x, mid_y, f'd = {dist_perp:.3f} m', 
+            backgroundcolor='white', fontsize=10, fontweight='bold', 
+            bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8))
+    
+    # Adjust plot limits with margin
+    margin = max(dist_perp, dist_AB * 0.1) + 2
+    min_x = min(xA, xB, xPT, proj[0]) - margin
+    max_x = max(xA, xB, xPT, proj[0]) + margin
+    min_y = min(yA, yB, yPT, proj[1]) - margin
+    max_y = max(yA, yB, yPT, proj[1]) + margin
+    
+    ax.set_xlim(min_x, max_x)
+    ax.set_ylim(min_y, max_y)
+    
+    # Plot aesthetics
+    ax.set_xlabel("Coordenada X (m)")
+    ax.set_ylabel("Coordenada Y (m)")
+    ax.set_title("Visualización de Alineación PT-AB", fontsize=14, fontweight='bold')
+    ax.grid(True, alpha=0.3)
+    ax.axis('equal')
+    ax.legend()
+    
+    st.pyplot(fig)
 
-# Línea AB
-ax.plot([xA, xB], [yA, yB], 'b-', linewidth=0.5, label="Línea AB")
-# Línea perpendicular
-ax.plot([xPT, proj[0]], [yPT, proj[1]], 'r--', linewidth=2, label="Perpendicular")
+# Additional information
+st.subheader("📋 Información Adicional")
+col3, col4 = st.columns(2)
 
-# --- Puntos con círculo y cruz
-# PT
-ax.plot(xPT, yPT, 'ro', markersize=12, markerfacecolor='none', label="PT")
-ax.plot([xPT-0.5, xPT+0.5], [yPT, yPT], 'r', linewidth=2)  # cruz horizontal
-ax.plot([xPT, xPT], [yPT-0.5, yPT+0.5], 'r', linewidth=2)  # cruz vertical
+with col3:
+    st.write("**Interpretación de resultados:**")
+    st.write("- **Distancia positiva**: PT a la derecha de AB")
+    st.write("- **Distancia negativa**: PT a la izquierda de AB")
+    st.write("- **Distancia cero**: PT sobre la línea AB")
 
-# Proyección
-ax.plot(proj[0], proj[1], 'go', markersize=12, markerfacecolor='none', label="Proyección de PT")
-ax.plot([proj[0]-0.5, proj[0]+0.5], [proj[1], proj[1]], 'g', linewidth=2)
-ax.plot([proj[0], proj[0]], [proj[1]-0.5, proj[1]+0.5], 'g', linewidth=2)
+with col4:
+    st.write("**Recomendaciones:**")
+    st.write("- Ajuste la tolerancia según la precisión requerida")
+    st.write("- Verifique que los puntos A y B sean distintos")
+    st.write("- Use el vector de corrección para ajustar la posición")
 
-# --- Offsets independientes para etiquetas
-offset_PT = (0.5, 0.5)        # PT: arriba-derecha
-offset_Proy = (0.5, -0.5)     # Proyección: abajo-derecha
-offset_dist = (0.3, 0.3)      # Distancia perpendicular: arriba-derecha
-
-
-
-# Distancia perpendicular
-mid_x = (xPT + proj[0]) / 2
-mid_y = (yPT + proj[1]) / 2
-offset_dist = (2,2)  # más alejamiento en X y Y
-ax.text(mid_x + offset_dist[1], mid_y + offset_dist[1], f"{dist_perp:.3f} m", color='purple', fontsize=8, fontweight='bold')
-
-# --- Ajustes de zoom
-margin = 1.5  # menos margen = más zoom
-min_x = min(xA, xB, xPT, proj[0]) - margin
-max_x = max(xA, xB, xPT, proj[0]) + margin
-min_y = min(yA, yB, yPT, proj[1]) - margin
-max_y = max(yA, yB, yPT, proj[1]) + margin
-ax.set_xlim(min_x, max_x)
-ax.set_ylim(min_y, max_y)
-
-# Ejes y estética
-ax.set_xlabel("X")
-ax.set_ylabel("Y")
-ax.set_title("Alineación de PT respecto a AB", fontsize=12)
-ax.grid(True)
-ax.axis("equal")
-ax.legend(fontsize=9)
-
-st.pyplot(fig)
-if alineado:
-    st.success(f"✅ PT está alineado con AB dentro de la tolerancia de {tol} m")
+# Footer
+st.markdown("---")
+st.markdown("*Herramienta desarrollada para verificación de alineación topográfica*")
 
 
 
