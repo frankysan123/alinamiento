@@ -193,8 +193,8 @@ with col2:
     
 
     # Desplazar un poco la etiqueta (ejemplo: +0.5 en Y)
-    offset_x = 3
-    offset_y = 3
+    offset_x = 5
+    offset_y = 5
 
     ax.text(mid_x + offset_x, mid_y + offset_y, f'd = {dist_perp:.3f} m',
     backgroundcolor='white', fontsize=10, fontweight='bold',
@@ -240,6 +240,7 @@ with col4:
 # Footer
 st.markdown("---")
 st.markdown("*Herramienta desarrollada para verificación de alineación topográfica*")
+
 
 
 
