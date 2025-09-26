@@ -261,11 +261,11 @@ with col2:
     
     # Point PT
     ax.plot(xPT, yPT, 'ro', markersize=12, markerfacecolor='red', label="Punto PT")
-    ax.text(xPT, yPT, '  PT', verticalalignment='center', fontweight='bold', color='red')
+    
     
     # Projection point
     ax.plot(proj[0], proj[1], 'gs', markersize=10, label="Proyección")
-    ax.text(proj[0], proj[1], '  Proy', verticalalignment='center', fontweight='bold', color='green')
+   
 
     # Distance label
     offset_x = 6
@@ -322,3 +322,4 @@ with col4:
 # Footer
 st.markdown("---")
 st.markdown("*Herramienta desarrollada para verificación de alineación topográfica y división de segmentos*")
+
