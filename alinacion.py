@@ -185,7 +185,7 @@ with col2:
     arrowprops=dict(arrowstyle='<->', color='purple', lw=1.5))
     
     # Point PT
-    ax.plot(xPT, yPT, 'ro', markersize=5, markerfacecolor='red', label="Punto PT")
+    ax.plot(xPT, yPT, 'ro', markersize=15, markerfacecolor='red', label="Punto PT")
    
     
     # Projection point
@@ -240,6 +240,7 @@ with col4:
 # Footer
 st.markdown("---")
 st.markdown("*Herramienta desarrollada para verificación de alineación topográfica*")
+
 
 
 
