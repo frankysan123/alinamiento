@@ -1,6 +1,9 @@
 import streamlit as st
 import numpy as np
-import matplotlib.pyplot as plt
+import pandas as pd
+import plotly.graph_objects as go
+from datetime import datetime
+import io
 
 # Page configuration
 st.set_page_config(
@@ -42,7 +45,6 @@ st.markdown("""
         border-radius: 10px;
         margin: 1rem 0;
     }
-    /* Hide number input arrows */
     input[type=number]::-webkit-outer-spin-button,
     input[type=number]::-webkit-inner-spin-button {
         -webkit-appearance: none;
@@ -51,56 +53,35 @@ st.markdown("""
     input[type=number] {
         -moz-appearance: textfield;
     }
+    .stDownloadButton button {
+        width: 100%;
+    }
 </style>
 """, unsafe_allow_html=True)
+
+# Initialize session state for history
+if 'calculation_history' not in st.session_state:
+    st.session_state.calculation_history = []
 
 # Header
 st.markdown('<div class="main-header">📐 Verificación de Alineación de Punto de Control con Línea AB + División de Segmentos</div>', unsafe_allow_html=True)
 st.markdown("Introduce las coordenadas de dos puntos **A y B** y un punto **PC** (Punto de Control).")
 
-# Sidebar for inputs
-with st.sidebar:
-    st.header("🔧 Parámetros de Entrada")
-    
-    st.subheader("Coordenadas del Punto A")
-    xA = float(st.text_input("Coordenada X A", value="1072.998"))
-    yA = float(st.text_input("Coordenada Y A", value="971.948"))
-    
-    st.subheader("Coordenadas del Punto B")
-    xB = float(st.text_input("Coordenada X B", value="963.595"))
-    yB = float(st.text_input("Coordenada Y B", value="1012.893"))
-    
-    st.subheader("Coordenadas del Punto PC")
-    xPC = float(st.text_input("Coordenada X PC", value="1040.749"))
-    yPC = float(st.text_input("Coordenada Y PC", value="983.875"))
-    
-    tol = st.slider("Tolerancia (m)", 
-                    min_value=0.001, 
-                    max_value=1.0, 
-                    value=0.01, 
-                    step=0.001, 
-                    format="%.3f")
-    
-    # New: Segment division option
-    st.subheader("🔢 División del Segmento AB")
-    num_divisions = st.number_input("Número de divisiones", 
-                                   min_value=1, 
-                                   max_value=20, 
-                                   value=5, 
-                                   step=1,
-                                   help="Divide el segmento AB en partes iguales")
-
-# --- Functions ---
+# --- Functions with caching ---
+@st.cache_data
 def distancia_perpendicular(A, B, PC):
+    """Calcula la distancia perpendicular con signo (positivo=derecha, negativo=izquierda)"""
     (xA, yA), (xB, yB), (xPC, yPC) = A, B, PC
     det = (xB - xA)*(yA - yPC) - (yB - yA)*(xA - xPC)
     AB = np.sqrt((xB - xA)**2 + (yB - yA)**2)
     if AB == 0:
-        return float('inf')  # Points A and B are the same
-    d = -det / AB  # positivo = derecha, negativo = izquierda
+        return float('inf')
+    d = -det / AB
     return d
 
+@st.cache_data
 def proyeccion(A, B, PC):
+    """Proyecta el punto PC sobre la línea AB"""
     A = np.array(A)
     B = np.array(B)
     PC = np.array(PC)
@@ -108,18 +89,18 @@ def proyeccion(A, B, PC):
     AP = PC - A
     dot_product = np.dot(AP, AB)
     if np.dot(AB, AB) == 0:
-        return A  # Points A and B are the same
+        return A
     t = dot_product / np.dot(AB, AB)
     return A + t*AB
 
+@st.cache_data
 def calcular_distancia(p1, p2):
+    """Calcula distancia euclidiana entre dos puntos"""
     return np.sqrt((p2[0]-p1[0])**2 + (p2[1]-p1[1])**2)
 
+@st.cache_data
 def dividir_segmento(A, B, num_partes):
-    """
-    Divide el segmento AB en num_partes iguales
-    Retorna lista de puntos incluyendo A y B
-    """
+    """Divide el segmento AB en num_partes iguales"""
     A = np.array(A)
     B = np.array(B)
     puntos = []
@@ -130,6 +111,208 @@ def dividir_segmento(A, B, num_partes):
         puntos.append((float(punto[0]), float(punto[1])))
     
     return puntos
+
+def validar_coordenada(valor, nombre):
+    """Valida que el valor sea numérico"""
+    try:
+        return float(valor)
+    except (ValueError, TypeError):
+        st.error(f"❌ Error: {nombre} debe ser un valor numérico")
+        st.stop()
+
+def crear_dataframe_division(puntos_division, A):
+    """Crea DataFrame con información de puntos de división"""
+    data = []
+    for i, punto in enumerate(puntos_division):
+        distancia_desde_A = calcular_distancia(A, punto)
+        data.append({
+            "Punto": f"P{i}",
+            "X": round(punto[0], 3),
+            "Y": round(punto[1], 3),
+            "Distancia desde A (m)": round(distancia_desde_A, 3)
+        })
+    return pd.DataFrame(data)
+
+def exportar_excel(df_division, resultados):
+    """Exporta datos a Excel con múltiples hojas"""
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        # Hoja de puntos de división
+        df_division.to_excel(writer, sheet_name='Puntos División', index=False)
+        
+        # Hoja de resultados
+        df_resultados = pd.DataFrame([resultados])
+        df_resultados.to_excel(writer, sheet_name='Resultados', index=False)
+    
+    output.seek(0)
+    return output
+
+def crear_grafico_plotly(A, B, PC, proj, puntos_division, d_signed, dist_perp, num_divisions):
+    """Crea gráfico interactivo con Plotly"""
+    fig = go.Figure()
+    
+    # Línea AB
+    fig.add_trace(go.Scatter(
+        x=[A[0], B[0]], 
+        y=[A[1], B[1]],
+        mode='lines',
+        name='Línea AB',
+        line=dict(color='blue', width=3),
+        hovertemplate='X: %{x:.3f}<br>Y: %{y:.3f}<extra></extra>'
+    ))
+    
+    # Línea perpendicular
+    fig.add_trace(go.Scatter(
+        x=[PC[0], proj[0]], 
+        y=[PC[1], proj[1]],
+        mode='lines',
+        name='Distancia perpendicular',
+        line=dict(color='red', width=2, dash='dash'),
+        hovertemplate='Distancia: ' + f'{dist_perp:.3f} m<extra></extra>'
+    ))
+    
+    # Puntos de división
+    division_x = [p[0] for p in puntos_division]
+    division_y = [p[1] for p in puntos_division]
+    division_labels = [f'P{i}' for i in range(len(puntos_division))]
+    
+    fig.add_trace(go.Scatter(
+        x=division_x,
+        y=division_y,
+        mode='markers+text',
+        name=f'División ({num_divisions} partes)',
+        marker=dict(color='orange', size=8),
+        text=division_labels,
+        textposition='top center',
+        hovertemplate='%{text}<br>X: %{x:.3f}<br>Y: %{y:.3f}<extra></extra>'
+    ))
+    
+    # Punto A
+    fig.add_trace(go.Scatter(
+        x=[A[0]], y=[A[1]],
+        mode='markers+text',
+        name='Punto A',
+        marker=dict(color='blue', size=12, symbol='circle'),
+        text=['A'],
+        textposition='bottom center',
+        hovertemplate='Punto A<br>X: %{x:.3f}<br>Y: %{y:.3f}<extra></extra>'
+    ))
+    
+    # Punto B
+    fig.add_trace(go.Scatter(
+        x=[B[0]], y=[B[1]],
+        mode='markers+text',
+        name='Punto B',
+        marker=dict(color='blue', size=12, symbol='circle'),
+        text=['B'],
+        textposition='bottom center',
+        hovertemplate='Punto B<br>X: %{x:.3f}<br>Y: %{y:.3f}<extra></extra>'
+    ))
+    
+    # Punto PC
+    fig.add_trace(go.Scatter(
+        x=[PC[0]], y=[PC[1]],
+        mode='markers+text',
+        name='Punto Control (PC)',
+        marker=dict(color='red', size=14, symbol='diamond'),
+        text=['PC'],
+        textposition='top center',
+        hovertemplate='PC<br>X: %{x:.3f}<br>Y: %{y:.3f}<extra></extra>'
+    ))
+    
+    # Proyección
+    fig.add_trace(go.Scatter(
+        x=[proj[0]], y=[proj[1]],
+        mode='markers+text',
+        name='Proyección',
+        marker=dict(color='green', size=10, symbol='square'),
+        text=['Proj'],
+        textposition='bottom center',
+        hovertemplate='Proyección<br>X: %{x:.3f}<br>Y: %{y:.3f}<extra></extra>'
+    ))
+    
+    # Layout
+    fig.update_layout(
+        title=f'Visualización de Alineación PC-AB + División en {num_divisions} Partes',
+        xaxis_title='Coordenada X (m)',
+        yaxis_title='Coordenada Y (m)',
+        showlegend=True,
+        hovermode='closest',
+        height=600,
+        yaxis=dict(scaleanchor="x", scaleratio=1)
+    )
+    
+    fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='LightGray')
+    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='LightGray')
+    
+    return fig
+
+# Sidebar for inputs
+with st.sidebar:
+    st.header("🔧 Parámetros de Entrada")
+    
+    # Modo de entrada
+    modo_entrada = st.radio(
+        "Modo de entrada de datos",
+        ["Manual", "Cargar desde archivo CSV"],
+        help="Selecciona cómo ingresar las coordenadas"
+    )
+    
+    if modo_entrada == "Cargar desde archivo CSV":
+        st.info("📁 El archivo CSV debe tener columnas: Punto, X, Y")
+        uploaded_file = st.file_uploader("Cargar archivo CSV", type=['csv'])
+        
+        if uploaded_file is not None:
+            try:
+                df = pd.read_csv(uploaded_file)
+                if len(df) >= 3:
+                    xA, yA = df.iloc[0]['X'], df.iloc[0]['Y']
+                    xB, yB = df.iloc[1]['X'], df.iloc[1]['Y']
+                    xPC, yPC = df.iloc[2]['X'], df.iloc[2]['Y']
+                    st.success("✅ Archivo cargado correctamente")
+                else:
+                    st.error("El archivo debe tener al menos 3 puntos")
+                    st.stop()
+            except Exception as e:
+                st.error(f"Error al cargar archivo: {e}")
+                st.stop()
+        else:
+            st.warning("Por favor, carga un archivo CSV")
+            st.stop()
+    else:
+        st.subheader("Coordenadas del Punto A")
+        xA = validar_coordenada(st.text_input("Coordenada X A", value="1072.998"), "Coordenada X A")
+        yA = validar_coordenada(st.text_input("Coordenada Y A", value="971.948"), "Coordenada Y A")
+        
+        st.subheader("Coordenadas del Punto B")
+        xB = validar_coordenada(st.text_input("Coordenada X B", value="963.595"), "Coordenada X B")
+        yB = validar_coordenada(st.text_input("Coordenada Y B", value="1012.893"), "Coordenada Y B")
+        
+        st.subheader("Coordenadas del Punto PC")
+        xPC = validar_coordenada(st.text_input("Coordenada X PC", value="1040.749"), "Coordenada X PC")
+        yPC = validar_coordenada(st.text_input("Coordenada Y PC", value="983.875"), "Coordenada Y PC")
+    
+    tol = st.slider("Tolerancia (m)", 
+                    min_value=0.001, 
+                    max_value=1.0, 
+                    value=0.01, 
+                    step=0.001, 
+                    format="%.3f")
+    
+    st.subheader("🔢 División del Segmento AB")
+    num_divisions = st.number_input("Número de divisiones", 
+                                   min_value=1, 
+                                   max_value=50, 
+                                   value=5, 
+                                   step=1,
+                                   help="Divide el segmento AB en partes iguales")
+    
+    st.markdown("---")
+    st.subheader("💾 Opciones de Exportación")
+    formato_export = st.selectbox(
+        "Formato de exportación",
+        ["Excel (.xlsx)", "CSV (.csv)", "JSON (.json)"]
+    )
 
 # --- Calculations ---
 A = (xA, yA)
@@ -153,6 +336,30 @@ dist_AB = calcular_distancia(A, B)
 puntos_division = dividir_segmento(A, B, num_divisions)
 longitud_entre_puntos = dist_AB / num_divisions
 
+# Create DataFrame for division points
+df_division = crear_dataframe_division(puntos_division, A)
+
+# Prepare results dictionary
+resultados = {
+    'Fecha': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    'A_X': xA, 'A_Y': yA,
+    'B_X': xB, 'B_Y': yB,
+    'PC_X': xPC, 'PC_Y': yPC,
+    'Distancia_Perpendicular': round(d_signed, 3),
+    'Distancia_Absoluta': round(d_abs, 3),
+    'Distancia_AB': round(dist_AB, 3),
+    'Tolerancia': tol,
+    'Alineado': 'Sí' if alineado else 'No',
+    'Posicion': 'Derecha' if d_signed > 0 else ('Izquierda' if d_signed < 0 else 'Sobre línea'),
+    'Proyeccion_X': round(proj[0], 3),
+    'Proyeccion_Y': round(proj[1], 3),
+    'Num_Divisiones': num_divisions,
+    'Longitud_Entre_Puntos': round(longitud_entre_puntos, 3)
+}
+
+# Add to history
+st.session_state.calculation_history.append(resultados)
+
 # --- Results Display ---
 col1, col2 = st.columns([1, 1])
 
@@ -162,164 +369,129 @@ with col1:
     # Distance results
     with st.container():
         st.markdown('<div class="result-box">', unsafe_allow_html=True)
-        st.metric("Distancia perpendicular absoluta", f"{d_abs:.3f} m", delta=f"{d_signed:.3f} m")
-        st.metric("Distancia del segmento AB", f"{dist_AB:.3f} m")
+        col_m1, col_m2 = st.columns(2)
+        with col_m1:
+            st.metric("Distancia perpendicular", f"{d_abs:.3f} m")
+        with col_m2:
+            st.metric("Distancia AB", f"{dist_AB:.3f} m")
         st.markdown('</div>', unsafe_allow_html=True)
     
     # Position indicator
     if alineado:
         st.markdown('<div class="success-box">', unsafe_allow_html=True)
-        st.success(f"✅ **PC está ALINEADO** con AB (dentro de la tolerancia de {tol} m)")
+        st.success(f"✅ **PC está ALINEADO** con AB (tolerancia: {tol} m)")
         st.markdown('</div>', unsafe_allow_html=True)
     else:
         st.markdown('<div class="warning-box">', unsafe_allow_html=True)
-        st.warning(f"⚠️ **PC NO está alineado** con AB (fuera de tolerancia de {tol} m)")
+        st.warning(f"⚠️ **PC NO está alineado** con AB (tolerancia: {tol} m)")
         st.markdown('</div>', unsafe_allow_html=True)
     
     # Direction indicator
     if d_signed > 0:
-        st.info("📍 **PC está a la DERECHA** de la línea AB")
+        st.info(f"📍 **PC está a la DERECHA** de AB ({d_signed:.3f} m)")
     elif d_signed < 0:
-        st.info("📍 **PC está a la IZQUIERDA** de la línea AB")
+        st.info(f"📍 **PC está a la IZQUIERDA** de AB ({abs(d_signed):.3f} m)")
     else:
         st.info("🎯 **PC está exactamente sobre** la línea AB")
     
     # Projection details
-    st.subheader("📐 Detalles de Proyección")
-    st.write(f"**Coordenadas de proyección:** ({proj[0]:.3f}, {proj[1]:.3f})")
-    st.write(f"**Vector de corrección:** ΔX = {corr_vector[0]:.3f} m, ΔY = {corr_vector[1]:.3f} m")
+    with st.expander("📐 Ver Detalles de Proyección"):
+        st.write(f"**Coordenadas de proyección:** ({proj[0]:.3f}, {proj[1]:.3f})")
+        st.write(f"**Vector de corrección:** ΔX = {corr_vector[0]:.3f} m, ΔY = {corr_vector[1]:.3f} m")
+        st.write(f"**Magnitud corrección:** {np.linalg.norm(corr_vector):.3f} m")
     
     # Division results
     st.subheader("📏 División del Segmento AB")
     st.markdown('<div class="division-box">', unsafe_allow_html=True)
-    st.write(f"**Segmento AB dividido en {num_divisions} partes iguales**")
+    st.write(f"**Segmento dividido en:** {num_divisions} partes iguales")
     st.write(f"**Longitud entre puntos:** {longitud_entre_puntos:.3f} m")
-    st.write(f"**Total de puntos generados:** {len(puntos_division)}")
+    st.write(f"**Total de puntos:** {len(puntos_division)}")
     st.markdown('</div>', unsafe_allow_html=True)
     
     # Division points table
-    st.subheader("📋 Coordenadas de los Puntos de División")
-    division_data = []
-    for i, punto in enumerate(puntos_division):
-        distancia_desde_A = calcular_distancia(A, punto)
-        division_data.append({
-            "Punto": f"P{i}",
-            "X": f"{punto[0]:.3f}",
-            "Y": f"{punto[1]:.3f}",
-            "Distancia desde A": f"{distancia_desde_A:.3f} m"
-        })
+    st.subheader("📋 Tabla de Puntos de División")
+    st.dataframe(df_division, use_container_width=True, height=300)
     
-    # Show first few points with expander for all points
-    st.table(division_data[:6])  # Show first 6 points
+    # Export buttons
+    st.subheader("💾 Exportar Datos")
     
-    if len(division_data) > 6:
-        with st.expander("Ver todos los puntos"):
-            for i in range(6, len(division_data)):
-                punto = division_data[i]
-                st.write(f"{punto['Punto']}: X={punto['X']}, Y={punto['Y']}, Distancia A={punto['Distancia desde A']}")
+    if formato_export == "Excel (.xlsx)":
+        excel_data = exportar_excel(df_division, resultados)
+        st.download_button(
+            label="📥 Descargar Excel",
+            data=excel_data,
+            file_name=f"alineacion_topografica_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+    elif formato_export == "CSV (.csv)":
+        csv_data = df_division.to_csv(index=False)
+        st.download_button(
+            label="📥 Descargar CSV",
+            data=csv_data,
+            file_name=f"puntos_division_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+            mime="text/csv"
+        )
+    else:  # JSON
+        json_data = df_division.to_json(orient='records', indent=2)
+        st.download_button(
+            label="📥 Descargar JSON",
+            data=json_data,
+            file_name=f"puntos_division_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+            mime="application/json"
+        )
 
 with col2:
-    st.subheader("📈 Visualización Gráfica")
+    st.subheader("📈 Visualización Gráfica Interactiva")
     
-    # Create the plot
-    fig, ax = plt.subplots(figsize=(12, 10))
+    # Create interactive Plotly chart
+    fig = crear_grafico_plotly(A, B, PC, proj, puntos_division, d_signed, dist_perp, num_divisions)
+    st.plotly_chart(fig, use_container_width=True)
     
-    # Line AB
-    ax.plot([xA, xB], [yA, yB], 'b-', linewidth=3, label="Línea AB", alpha=0.7)
-    
-    # Perpendicular line
-    ax.plot([xPC, proj[0]], [yPC, proj[1]], 'r--', linewidth=2, label="Distancia perpendicular", alpha=0.7)
-    
-    # Division points
-    division_x = [p[0] for p in puntos_division]
-    division_y = [p[1] for p in puntos_division]
-    ax.scatter(division_x, division_y, c='orange', s=50, alpha=0.7, label=f"Puntos de división ({num_divisions} partes)")
-    
-    # Label division points
-    for i, (x, y) in enumerate(puntos_division):
-        if i == 0:  # Point A
-            ax.text(x, y, '  A', verticalalignment='center', fontweight='bold', fontsize=10)
-        elif i == len(puntos_division) - 1:  # Point B
-            ax.text(x, y, '  B', verticalalignment='center', fontweight='bold', fontsize=10)
-        else:
-            ax.text(x, y, f'  P{i}', verticalalignment='center', fontsize=8, alpha=0.8)
-    
-    # Points with enhanced styling
-    # Point A (already labeled above)
-    ax.plot(xA, yA, 'bo', markersize=8)
-    
-    # Point B (already labeled above)
-    ax.plot(xB, yB, 'bo', markersize=8)
-    
-    # Distance annotation with arrow
-    mid_x = (xPC + proj[0]) / 2
-    mid_y = (yPC + proj[1]) / 2
-    
-    # Add perpendicular distance annotation
-    ax.annotate('', xy=(proj[0], proj[1]), xytext=(xPC, yPC),
-                arrowprops=dict(arrowstyle='<->', color='purple', lw=1.5))
-    
-    # Point PC
-    ax.plot(xPC, yPC, 'ro', markersize=12, markerfacecolor='red', label="Punto de Control (PC)")
-    
-    
-    # Projection point
-    ax.plot(proj[0], proj[1], 'gs', markersize=10, label="Proyección")
-   
-
-    # Distance label
-    offset_x = 7
-    offset_y = 7
-    ax.text(mid_x + offset_x, mid_y + offset_y, f'd = {dist_perp:.3f} m',
-            backgroundcolor='white', fontsize=10, fontweight='bold',
-            bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8))
-    
-    # Adjust plot limits with margin
-    margin = max(dist_perp, dist_AB * 0.1) + 2
-    min_x = min(xA, xB, xPC, proj[0]) - margin
-    max_x = max(xA, xB, xPC, proj[0]) + margin
-    min_y = min(yA, yB, yPC, proj[1]) - margin
-    max_y = max(yA, yB, yPC, proj[1]) + margin
-    
-    ax.set_xlim(min_x, max_x)
-    ax.set_ylim(min_y, max_y)
-    
-    # Plot aesthetics
-    ax.set_xlabel("Coordenada X (m)")
-    ax.set_ylabel("Coordenada Y (m)")
-    ax.set_title(f"Visualización de Alineación PC-AB + División en {num_divisions} Partes", 
-                 fontsize=14, fontweight='bold')
-    ax.grid(True, alpha=0.3)
-    ax.axis('equal')
-    ax.legend()
-    
-    st.pyplot(fig)
+    # Chart controls
+    with st.expander("⚙️ Opciones de Visualización"):
+        mostrar_grid = st.checkbox("Mostrar cuadrícula", value=True)
+        mostrar_etiquetas = st.checkbox("Mostrar etiquetas", value=True)
+        
+        if not mostrar_grid:
+            fig.update_xaxes(showgrid=False)
+            fig.update_yaxes(showgrid=False)
 
 # Additional information
+st.markdown("---")
 st.subheader("📋 Información Adicional")
-col3, col4 = st.columns(2)
+col3, col4, col5 = st.columns(3)
 
 with col3:
-    st.write("**Interpretación de resultados:**")
-    st.write("- **Distancia positiva**: PC a la derecha de AB")
-    st.write("- **Distancia negativa**: PC a la izquierda de AB")
-    st.write("- **Distancia cero**: PC sobre la línea AB")
-    st.write("**División del segmento:**")
-    st.write(f"- P0 = Punto A")
-    st.write(f"- P{num_divisions} = Punto B")
-    st.write(f"- Cada segmento mide {longitud_entre_puntos:.3f} m")
+    st.write("**Interpretación:**")
+    st.write("- ➕ Distancia positiva: PC a la derecha")
+    st.write("- ➖ Distancia negativa: PC a la izquierda")
+    st.write("- 0️⃣ Distancia cero: PC sobre AB")
 
 with col4:
+    st.write("**División:**")
+    st.write(f"- P0 = Punto A")
+    st.write(f"- P{num_divisions} = Punto B")
+    st.write(f"- Cada segmento: {longitud_entre_puntos:.3f} m")
+
+with col5:
     st.write("**Recomendaciones:**")
-    st.write("- Ajuste la tolerancia según la precisión requerida")
-    st.write("- Verifique que los puntos A y B sean distintos")
-    st.write("- Use el vector de corrección para ajustar la posición")
-    st.write("- Los puntos de división son útiles para:")
-    st.write("  • Estacas intermedias en topografía")
-    st.write("  • Puntos de referencia en construcción")
-    st.write("  • Muestreo equidistante a lo largo de AB")
+    st.write("- Ajuste tolerancia según precisión")
+    st.write("- Use vector de corrección")
+    st.write("- Exporte datos para reportes")
+
+# Calculation history
+with st.expander("📜 Ver Historial de Cálculos (Sesión Actual)"):
+    if len(st.session_state.calculation_history) > 0:
+        df_history = pd.DataFrame(st.session_state.calculation_history)
+        st.dataframe(df_history, use_container_width=True)
+        
+        if st.button("🗑️ Limpiar Historial"):
+            st.session_state.calculation_history = []
+            st.rerun()
+    else:
+        st.info("No hay cálculos en el historial aún")
 
 # Footer
 st.markdown("---")
-st.markdown("*Herramienta desarrollada para verificación de alineación topográfica y división de segmentos*")
-
+st.markdown("*Herramienta mejorada para verificación de alineación topográfica y división de segmentos*")
+st.markdown("**Versión 2.0** - Con exportación de datos, gráficos interactivos y caché optimizado")
