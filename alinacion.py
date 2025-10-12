@@ -77,7 +77,7 @@ st.markdown("""
         }
     }
     
-    /* Controles de Plotly - Tamaño moderado y mejor posicionados */
+    /* Controles de Plotly - Fondo negro para mejor contraste */
     .modebar {
         position: absolute !important;
         top: 50px !important;
@@ -90,16 +90,26 @@ st.markdown("""
         height: 32px !important;
         margin: 2px !important;
         border-radius: 6px !important;
-        background-color: rgba(255, 255, 255, 0.95) !important;
+        background-color: rgba(30, 30, 30, 0.95) !important;
         border: 1.5px solid #1f77b4 !important;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.12) !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+    }
+    
+    /* Iconos blancos para máximo contraste */
+    .modebar-btn svg path {
+        fill: white !important;
     }
     
     .modebar-btn:hover {
-        background-color: #e3f2fd !important;
-        border-color: #1557a0 !important;
-        transform: scale(1.05);
+        background-color: #1f77b4 !important;
+        border-color: #4a9eff !important;
+        transform: scale(1.08);
         transition: all 0.2s ease;
+    }
+    
+    /* Iconos blancos también en hover */
+    .modebar-btn:hover svg path {
+        fill: white !important;
     }
     
     .modebar-btn svg {
@@ -107,13 +117,13 @@ st.markdown("""
         height: 18px !important;
     }
     
-    /* Grupo de botones del modebar */
+    /* Grupo de botones con fondo negro */
     .modebar-group {
-        background-color: rgba(255, 255, 255, 0.92) !important;
+        background-color: rgba(30, 30, 30, 0.95) !important;
         padding: 4px !important;
         border-radius: 8px !important;
         margin: 3px !important;
-        box-shadow: 0 3px 10px rgba(0,0,0,0.12) !important;
+        box-shadow: 0 3px 12px rgba(0,0,0,0.4) !important;
     }
     
     /* Para móviles - botones ligeramente más grandes */
