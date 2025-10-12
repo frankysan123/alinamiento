@@ -9,17 +9,29 @@ import io
 st.set_page_config(
     page_title="Alineación de PC con AB", 
     layout="wide",
-    page_icon="📐"
+    page_icon="📐",
+    initial_sidebar_state="expanded"
 )
 
 # Custom CSS for better styling
 st.markdown("""
 <style>
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .main-header {
+            font-size: 1.5rem !important;
+        }
+        .stColumn {
+            min-width: 100% !important;
+        }
+    }
+    
     .main-header {
-        font-size: 2.5rem;
+        font-size: 2.2rem;
         color: #1f77b4;
         text-align: center;
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
+        font-weight: bold;
     }
     .result-box {
         background-color: #f0f2f6;
@@ -45,6 +57,7 @@ st.markdown("""
         border-radius: 10px;
         margin: 1rem 0;
     }
+    /* Hide number input arrows */
     input[type=number]::-webkit-outer-spin-button,
     input[type=number]::-webkit-inner-spin-button {
         -webkit-appearance: none;
@@ -55,6 +68,38 @@ st.markdown("""
     }
     .stDownloadButton button {
         width: 100%;
+    }
+    
+    /* Optimización para móvil */
+    @media (max-width: 640px) {
+        .stPlotlyChart {
+            height: 500px !important;
+        }
+    }
+    
+    /* Mejor contraste en botones */
+    .stButton>button {
+        background-color: #1f77b4;
+        color: white;
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        font-weight: 500;
+    }
+    
+    .stButton>button:hover {
+        background-color: #1557a0;
+        border-color: #1557a0;
+    }
+    
+    /* Mejora en inputs */
+    .stTextInput>div>div>input {
+        border-radius: 8px;
+        padding: 0.5rem;
+    }
+    
+    /* Sidebar más compacto */
+    .css-1d391kg {
+        padding-top: 2rem;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -148,7 +193,7 @@ def exportar_excel(df_division, resultados):
     return output
 
 def crear_grafico_plotly(A, B, PC, proj, puntos_division, d_signed, dist_perp, num_divisions):
-    """Crea gráfico interactivo con Plotly"""
+    """Crea gráfico interactivo con Plotly optimizado para móvil"""
     fig = go.Figure()
     
     # Línea AB
@@ -157,8 +202,8 @@ def crear_grafico_plotly(A, B, PC, proj, puntos_division, d_signed, dist_perp, n
         y=[A[1], B[1]],
         mode='lines',
         name='Línea AB',
-        line=dict(color='blue', width=3),
-        hovertemplate='X: %{x:.3f}<br>Y: %{y:.3f}<extra></extra>'
+        line=dict(color='blue', width=4),
+        hovertemplate='<b>Línea AB</b><br>X: %{x:.3f}<br>Y: %{y:.3f}<extra></extra>'
     ))
     
     # Línea perpendicular
@@ -166,9 +211,9 @@ def crear_grafico_plotly(A, B, PC, proj, puntos_division, d_signed, dist_perp, n
         x=[PC[0], proj[0]], 
         y=[PC[1], proj[1]],
         mode='lines',
-        name='Distancia perpendicular',
-        line=dict(color='red', width=2, dash='dash'),
-        hovertemplate='Distancia: ' + f'{dist_perp:.3f} m<extra></extra>'
+        name='Dist. perpendicular',
+        line=dict(color='red', width=3, dash='dash'),
+        hovertemplate=f'<b>Distancia</b><br>{dist_perp:.3f} m<extra></extra>'
     ))
     
     # Puntos de división
@@ -180,11 +225,12 @@ def crear_grafico_plotly(A, B, PC, proj, puntos_division, d_signed, dist_perp, n
         x=division_x,
         y=division_y,
         mode='markers+text',
-        name=f'División ({num_divisions} partes)',
-        marker=dict(color='orange', size=8),
+        name=f'División ({num_divisions})',
+        marker=dict(color='orange', size=10),
         text=division_labels,
         textposition='top center',
-        hovertemplate='%{text}<br>X: %{x:.3f}<br>Y: %{y:.3f}<extra></extra>'
+        textfont=dict(size=10),
+        hovertemplate='<b>%{text}</b><br>X: %{x:.3f}<br>Y: %{y:.3f}<extra></extra>'
     ))
     
     # Punto A
@@ -192,10 +238,11 @@ def crear_grafico_plotly(A, B, PC, proj, puntos_division, d_signed, dist_perp, n
         x=[A[0]], y=[A[1]],
         mode='markers+text',
         name='Punto A',
-        marker=dict(color='blue', size=12, symbol='circle'),
+        marker=dict(color='blue', size=16, symbol='circle'),
         text=['A'],
         textposition='bottom center',
-        hovertemplate='Punto A<br>X: %{x:.3f}<br>Y: %{y:.3f}<extra></extra>'
+        textfont=dict(size=14, color='blue'),
+        hovertemplate='<b>Punto A</b><br>X: %{x:.3f}<br>Y: %{y:.3f}<extra></extra>'
     ))
     
     # Punto B
@@ -203,21 +250,23 @@ def crear_grafico_plotly(A, B, PC, proj, puntos_division, d_signed, dist_perp, n
         x=[B[0]], y=[B[1]],
         mode='markers+text',
         name='Punto B',
-        marker=dict(color='blue', size=12, symbol='circle'),
+        marker=dict(color='blue', size=16, symbol='circle'),
         text=['B'],
         textposition='bottom center',
-        hovertemplate='Punto B<br>X: %{x:.3f}<br>Y: %{y:.3f}<extra></extra>'
+        textfont=dict(size=14, color='blue'),
+        hovertemplate='<b>Punto B</b><br>X: %{x:.3f}<br>Y: %{y:.3f}<extra></extra>'
     ))
     
     # Punto PC
     fig.add_trace(go.Scatter(
         x=[PC[0]], y=[PC[1]],
         mode='markers+text',
-        name='Punto Control (PC)',
-        marker=dict(color='red', size=14, symbol='diamond'),
+        name='Punto Control',
+        marker=dict(color='red', size=18, symbol='diamond'),
         text=['PC'],
         textposition='top center',
-        hovertemplate='PC<br>X: %{x:.3f}<br>Y: %{y:.3f}<extra></extra>'
+        textfont=dict(size=14, color='red'),
+        hovertemplate='<b>PC</b><br>X: %{x:.3f}<br>Y: %{y:.3f}<extra></extra>'
     ))
     
     # Proyección
@@ -225,25 +274,52 @@ def crear_grafico_plotly(A, B, PC, proj, puntos_division, d_signed, dist_perp, n
         x=[proj[0]], y=[proj[1]],
         mode='markers+text',
         name='Proyección',
-        marker=dict(color='green', size=10, symbol='square'),
+        marker=dict(color='green', size=14, symbol='square'),
         text=['Proj'],
         textposition='bottom center',
-        hovertemplate='Proyección<br>X: %{x:.3f}<br>Y: %{y:.3f}<extra></extra>'
+        textfont=dict(size=12, color='green'),
+        hovertemplate='<b>Proyección</b><br>X: %{x:.3f}<br>Y: %{y:.3f}<extra></extra>'
     ))
     
-    # Layout
+    # Layout optimizado para móvil y web
     fig.update_layout(
-        title=f'Visualización de Alineación PC-AB + División en {num_divisions} Partes',
-        xaxis_title='Coordenada X (m)',
-        yaxis_title='Coordenada Y (m)',
+        title={
+            'text': f'Alineación PC-AB (División: {num_divisions})',
+            'x': 0.5,
+            'xanchor': 'center',
+            'font': {'size': 16}
+        },
+        xaxis_title='X (m)',
+        yaxis_title='Y (m)',
         showlegend=True,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=-0.2,
+            xanchor="center",
+            x=0.5,
+            font=dict(size=10)
+        ),
         hovermode='closest',
-        height=600,
-        yaxis=dict(scaleanchor="x", scaleratio=1)
+        height=700,
+        margin=dict(l=20, r=20, t=60, b=100),
+        yaxis=dict(scaleanchor="x", scaleratio=1),
+        dragmode='pan',
+        # Optimización para móvil
+        autosize=True,
+        plot_bgcolor='rgba(240,240,240,0.5)'
     )
     
-    fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='LightGray')
-    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='LightGray')
+    fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='rgba(200,200,200,0.5)')
+    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='rgba(200,200,200,0.5)')
+    
+    # Configuración para mejor experiencia táctil en móvil
+    fig.update_layout(
+        modebar=dict(
+            orientation='v',
+            bgcolor='rgba(255,255,255,0.7)'
+        )
+    )
     
     return fig
 
@@ -313,6 +389,38 @@ with st.sidebar:
         "Formato de exportación",
         ["Excel (.xlsx)", "CSV (.csv)", "JSON (.json)"]
     )
+    
+    # Export section in sidebar
+    st.markdown("---")
+    st.subheader("📥 Descargar Resultados")
+    
+    if formato_export == "Excel (.xlsx)":
+        excel_data = exportar_excel(df_division, resultados)
+        st.download_button(
+            label="📥 Excel",
+            data=excel_data,
+            file_name=f"topo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True
+        )
+    elif formato_export == "CSV (.csv)":
+        csv_data = df_division.to_csv(index=False)
+        st.download_button(
+            label="📥 CSV",
+            data=csv_data,
+            file_name=f"topo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+            mime="text/csv",
+            use_container_width=True
+        )
+    else:  # JSON
+        json_data = df_division.to_json(orient='records', indent=2)
+        st.download_button(
+            label="📥 JSON",
+            data=json_data,
+            file_name=f"topo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+            mime="application/json",
+            use_container_width=True
+        )
 
 # --- Calculations ---
 A = (xA, yA)
@@ -361,9 +469,16 @@ resultados = {
 st.session_state.calculation_history.append(resultados)
 
 # --- Results Display ---
-col1, col2 = st.columns([1, 1])
+col1, col2 = st.columns([1.4, 1])
 
 with col1:
+    st.subheader("📈 Visualización Gráfica Interactiva")
+    
+    # Create interactive Plotly chart
+    fig = crear_grafico_plotly(A, B, PC, proj, puntos_division, d_signed, dist_perp, num_divisions)
+    st.plotly_chart(fig, use_container_width=True)
+
+with col2:
     st.subheader("📊 Resultados de Alineación")
     
     # Distance results
@@ -410,51 +525,7 @@ with col1:
     
     # Division points table
     st.subheader("📋 Tabla de Puntos de División")
-    st.dataframe(df_division, use_container_width=True, height=300)
-    
-    # Export buttons
-    st.subheader("💾 Exportar Datos")
-    
-    if formato_export == "Excel (.xlsx)":
-        excel_data = exportar_excel(df_division, resultados)
-        st.download_button(
-            label="📥 Descargar Excel",
-            data=excel_data,
-            file_name=f"alineacion_topografica_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
-    elif formato_export == "CSV (.csv)":
-        csv_data = df_division.to_csv(index=False)
-        st.download_button(
-            label="📥 Descargar CSV",
-            data=csv_data,
-            file_name=f"puntos_division_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-            mime="text/csv"
-        )
-    else:  # JSON
-        json_data = df_division.to_json(orient='records', indent=2)
-        st.download_button(
-            label="📥 Descargar JSON",
-            data=json_data,
-            file_name=f"puntos_division_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
-            mime="application/json"
-        )
-
-with col2:
-    st.subheader("📈 Visualización Gráfica Interactiva")
-    
-    # Create interactive Plotly chart
-    fig = crear_grafico_plotly(A, B, PC, proj, puntos_division, d_signed, dist_perp, num_divisions)
-    st.plotly_chart(fig, use_container_width=True)
-    
-    # Chart controls
-    with st.expander("⚙️ Opciones de Visualización"):
-        mostrar_grid = st.checkbox("Mostrar cuadrícula", value=True)
-        mostrar_etiquetas = st.checkbox("Mostrar etiquetas", value=True)
-        
-        if not mostrar_grid:
-            fig.update_xaxes(showgrid=False)
-            fig.update_yaxes(showgrid=False)
+    st.dataframe(df_division, use_container_width=True, height=400)
 
 # Additional information
 st.markdown("---")
