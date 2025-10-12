@@ -77,52 +77,58 @@ st.markdown("""
         }
     }
     
-    /* Controles de Plotly más grandes y visibles */
+    /* Controles de Plotly - Tamaño moderado y mejor posicionados */
     .modebar {
         position: absolute !important;
-        top: 10px !important;
-        right: 10px !important;
+        top: 50px !important;
+        right: 15px !important;
+        z-index: 1000 !important;
     }
     
     .modebar-btn {
-        width: 40px !important;
-        height: 40px !important;
-        margin: 3px !important;
-        border-radius: 8px !important;
+        width: 32px !important;
+        height: 32px !important;
+        margin: 2px !important;
+        border-radius: 6px !important;
         background-color: rgba(255, 255, 255, 0.95) !important;
-        border: 2px solid #1f77b4 !important;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+        border: 1.5px solid #1f77b4 !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.12) !important;
     }
     
     .modebar-btn:hover {
-        background-color: #1f77b4 !important;
-        transform: scale(1.1);
+        background-color: #e3f2fd !important;
+        border-color: #1557a0 !important;
+        transform: scale(1.05);
         transition: all 0.2s ease;
     }
     
     .modebar-btn svg {
-        width: 22px !important;
-        height: 22px !important;
+        width: 18px !important;
+        height: 18px !important;
     }
     
     /* Grupo de botones del modebar */
     .modebar-group {
-        background-color: rgba(255, 255, 255, 0.9) !important;
-        padding: 5px !important;
-        border-radius: 10px !important;
-        margin: 5px !important;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+        background-color: rgba(255, 255, 255, 0.92) !important;
+        padding: 4px !important;
+        border-radius: 8px !important;
+        margin: 3px !important;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.12) !important;
     }
     
-    /* Para móviles - botones aún más grandes */
+    /* Para móviles - botones ligeramente más grandes */
     @media (max-width: 768px) {
+        .modebar {
+            top: 45px !important;
+            right: 10px !important;
+        }
         .modebar-btn {
-            width: 50px !important;
-            height: 50px !important;
+            width: 38px !important;
+            height: 38px !important;
         }
         .modebar-btn svg {
-            width: 26px !important;
-            height: 26px !important;
+            width: 20px !important;
+            height: 20px !important;
         }
     }
     
@@ -336,7 +342,8 @@ def crear_grafico_plotly(A, B, PC, proj, puntos_division, d_signed, dist_perp, n
             'text': f'Alineación PC-AB (División: {num_divisions})',
             'x': 0.5,
             'xanchor': 'center',
-            'font': {'size': 16}
+            'font': {'size': 16},
+            'pad': {'t': 10, 'b': 10}
         },
         xaxis_title='X (m)',
         yaxis_title='Y (m)',
@@ -351,7 +358,7 @@ def crear_grafico_plotly(A, B, PC, proj, puntos_division, d_signed, dist_perp, n
         ),
         hovermode='closest',
         height=700,
-        margin=dict(l=20, r=20, t=60, b=100),
+        margin=dict(l=20, r=80, t=80, b=100),
         yaxis=dict(scaleanchor="x", scaleratio=1),
         dragmode='pan',
         # Optimización para móvil
