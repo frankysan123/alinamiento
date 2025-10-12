@@ -77,6 +77,55 @@ st.markdown("""
         }
     }
     
+    /* Controles de Plotly más grandes y visibles */
+    .modebar {
+        position: absolute !important;
+        top: 10px !important;
+        right: 10px !important;
+    }
+    
+    .modebar-btn {
+        width: 40px !important;
+        height: 40px !important;
+        margin: 3px !important;
+        border-radius: 8px !important;
+        background-color: rgba(255, 255, 255, 0.95) !important;
+        border: 2px solid #1f77b4 !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+    }
+    
+    .modebar-btn:hover {
+        background-color: #1f77b4 !important;
+        transform: scale(1.1);
+        transition: all 0.2s ease;
+    }
+    
+    .modebar-btn svg {
+        width: 22px !important;
+        height: 22px !important;
+    }
+    
+    /* Grupo de botones del modebar */
+    .modebar-group {
+        background-color: rgba(255, 255, 255, 0.9) !important;
+        padding: 5px !important;
+        border-radius: 10px !important;
+        margin: 5px !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    }
+    
+    /* Para móviles - botones aún más grandes */
+    @media (max-width: 768px) {
+        .modebar-btn {
+            width: 50px !important;
+            height: 50px !important;
+        }
+        .modebar-btn svg {
+            width: 26px !important;
+            height: 26px !important;
+        }
+    }
+    
     /* Mejor contraste en botones */
     .stButton>button {
         background-color: #1f77b4;
@@ -313,15 +362,30 @@ def crear_grafico_plotly(A, B, PC, proj, puntos_division, d_signed, dist_perp, n
     fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='rgba(200,200,200,0.5)')
     fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='rgba(200,200,200,0.5)')
     
-    # Configuración para mejor experiencia táctil en móvil
-    fig.update_layout(
-        modebar=dict(
-            orientation='v',
-            bgcolor='rgba(255,255,255,0.7)'
-        )
-    )
+    # Configuración MEJORADA de controles - Más grandes y mejor posicionados
+    config = {
+        'displayModeBar': True,
+        'displaylogo': False,
+        'modeBarButtonsToAdd': ['drawline', 'drawopenpath', 'eraseshape'],
+        'modeBarButtonsToRemove': ['select2d', 'lasso2d'],
+        'toImageButtonOptions': {
+            'format': 'png',
+            'filename': 'topografia_plot',
+            'height': 1000,
+            'width': 1400,
+            'scale': 2
+        },
+        'modeBarStyle': {
+            'bgcolor': 'rgba(255, 255, 255, 0.9)',
+            'color': '#1f77b4'
+        },
+        # Controles más grandes
+        'modeBarButtonSize': 20,
+        'doubleClick': 'reset',
+        'scrollZoom': True
+    }
     
-    return fig
+    return fig, config
 
 # Sidebar for inputs
 with st.sidebar:
@@ -442,8 +506,22 @@ with col1:
     st.subheader("📈 Visualización Gráfica Interactiva")
     
     # Create interactive Plotly chart
-    fig = crear_grafico_plotly(A, B, PC, proj, puntos_division, d_signed, dist_perp, num_divisions)
-    st.plotly_chart(fig, use_container_width=True)
+    fig, config = crear_grafico_plotly(A, B, PC, proj, puntos_division, d_signed, dist_perp, num_divisions)
+    st.plotly_chart(fig, use_container_width=True, config=config)
+    
+    # Instrucciones de uso
+    with st.expander("ℹ️ Cómo usar los controles del gráfico"):
+        st.markdown("""
+        **Controles disponibles:**
+        - 🏠 **Home**: Restaurar vista original
+        - 🔍➕ **Zoom In**: Acercar la vista
+        - 🔍➖ **Zoom Out**: Alejar la vista
+        - ↔️ **Pan**: Mover/arrastrar el gráfico (activado por defecto)
+        - 📦 **Box Zoom**: Seleccionar área para hacer zoom
+        - 📷 **Captura**: Descargar imagen PNG del gráfico
+        - 🖱️ **Scroll**: Usa la rueda del mouse para zoom
+        - 🖐️ **Doble click**: Resetear zoom
+        """)
 
 with col2:
     st.subheader("📊 Resultados de Alineación")
