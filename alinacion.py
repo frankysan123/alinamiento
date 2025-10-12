@@ -384,43 +384,10 @@ with st.sidebar:
                                    help="Divide el segmento AB en partes iguales")
     
     st.markdown("---")
-    st.subheader("💾 Opciones de Exportación")
     formato_export = st.selectbox(
-        "Formato de exportación",
+        "💾 Formato de exportación",
         ["Excel (.xlsx)", "CSV (.csv)", "JSON (.json)"]
     )
-    
-    # Export section in sidebar
-    st.markdown("---")
-    st.subheader("📥 Descargar Resultados")
-    
-    if formato_export == "Excel (.xlsx)":
-        excel_data = exportar_excel(df_division, resultados)
-        st.download_button(
-            label="📥 Excel",
-            data=excel_data,
-            file_name=f"topo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            use_container_width=True
-        )
-    elif formato_export == "CSV (.csv)":
-        csv_data = df_division.to_csv(index=False)
-        st.download_button(
-            label="📥 CSV",
-            data=csv_data,
-            file_name=f"topo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-            mime="text/csv",
-            use_container_width=True
-        )
-    else:  # JSON
-        json_data = df_division.to_json(orient='records', indent=2)
-        st.download_button(
-            label="📥 JSON",
-            data=json_data,
-            file_name=f"topo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
-            mime="application/json",
-            use_container_width=True
-        )
 
 # --- Calculations ---
 A = (xA, yA)
@@ -526,6 +493,38 @@ with col2:
     # Division points table
     st.subheader("📋 Tabla de Puntos de División")
     st.dataframe(df_division, use_container_width=True, height=400)
+
+# Export section - MOVED AFTER CALCULATIONS
+st.sidebar.markdown("---")
+st.sidebar.subheader("📥 Descargar Resultados")
+
+if formato_export == "Excel (.xlsx)":
+    excel_data = exportar_excel(df_division, resultados)
+    st.sidebar.download_button(
+        label="📥 Descargar Excel",
+        data=excel_data,
+        file_name=f"topo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        use_container_width=True
+    )
+elif formato_export == "CSV (.csv)":
+    csv_data = df_division.to_csv(index=False)
+    st.sidebar.download_button(
+        label="📥 Descargar CSV",
+        data=csv_data,
+        file_name=f"topo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+        mime="text/csv",
+        use_container_width=True
+    )
+else:  # JSON
+    json_data = df_division.to_json(orient='records', indent=2)
+    st.sidebar.download_button(
+        label="📥 Descargar JSON",
+        data=json_data,
+        file_name=f"topo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+        mime="application/json",
+        use_container_width=True
+    )
 
 # Additional information
 st.markdown("---")
