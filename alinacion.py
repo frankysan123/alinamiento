@@ -281,22 +281,32 @@ def crear_grafico_plotly(A, B, PC, proj, puntos_division, d_signed, dist_perp, n
         hovertemplate=f'<b>Distancia</b><br>{dist_perp:.3f} m<extra></extra>'
     ))
     
-    # Puntos de división
-    division_x = [p[0] for p in puntos_division]
-    division_y = [p[1] for p in puntos_division]
-    division_labels = [f'P{i}' for i in range(len(puntos_division))]
-    
-    fig.add_trace(go.Scatter(
-        x=division_x,
-        y=division_y,
-        mode='markers+text',
-        name=f'División ({num_divisions})',
-        marker=dict(color='orange', size=10),
-        text=division_labels,
-        textposition='top center',
-        textfont=dict(size=10),
-        hovertemplate='<b>%{text}</b><br>X: %{x:.3f}<br>Y: %{y:.3f}<extra></extra>'
-    ))
+    # Puntos de división - SOLO SI HAY DIVISIONES
+    if num_divisions > 0 and len(puntos_division) > 0:
+        division_x = [p[0] for p in puntos_division]
+        division_y = [p[1] for p in puntos_division]
+        
+        # Optimización: Mostrar etiquetas solo si hay menos de 15 puntos
+        if len(puntos_division) <= 15:
+            division_labels = [f'P{i}' for i in range(len(puntos_division))]
+            mode = 'markers+text'
+            textposition = 'top center'
+        else:
+            division_labels = None
+            mode = 'markers'
+            textposition = None
+        
+        fig.add_trace(go.Scatter(
+            x=division_x,
+            y=division_y,
+            mode=mode,
+            name=f'División ({num_divisions})',
+            marker=dict(color='orange', size=8),
+            text=division_labels,
+            textposition=textposition,
+            textfont=dict(size=9),
+            hovertemplate='<b>P%{pointNumber}</b><br>X: %{x:.3f}<br>Y: %{y:.3f}<extra></extra>'
+        ))
     
     # Punto A
     fig.add_trace(go.Scatter(
@@ -347,9 +357,11 @@ def crear_grafico_plotly(A, B, PC, proj, puntos_division, d_signed, dist_perp, n
     ))
     
     # Layout optimizado para móvil y web
+    titulo = f'Alineación PC-AB' + (f' (División: {num_divisions})' if num_divisions > 0 else '')
+    
     fig.update_layout(
         title={
-            'text': f'Alineación PC-AB (División: {num_divisions})',
+            'text': titulo,
             'x': 0.5,
             'xanchor': 'center',
             'font': {'size': 16},
@@ -392,9 +404,10 @@ def crear_grafico_plotly(A, B, PC, proj, puntos_division, d_signed, dist_perp, n
             'width': 1400,
             'scale': 2
         },
+        # FONDO NEGRO Y CONFIGURACIÓN DE COLORES
         'modeBarStyle': {
-            'bgcolor': 'rgba(255, 255, 255, 0.9)',
-            'color': '#1f77b4'
+            'bgcolor': 'rgba(30, 30, 30, 0.95)',
+            'color': 'white'
         },
         # Controles más grandes
         'modeBarButtonSize': 20,
@@ -458,11 +471,11 @@ with st.sidebar:
     
     st.subheader("🔢 División del Segmento AB")
     num_divisions = st.number_input("Número de divisiones", 
-                                   min_value=1, 
-                                   max_value=50, 
-                                   value=5, 
+                                   min_value=0, 
+                                   max_value=100, 
+                                   value=0, 
                                    step=1,
-                                   help="Divide el segmento AB en partes iguales")
+                                   help="Divide el segmento AB en partes iguales (0 = sin división)")
     
     st.markdown("---")
     formato_export = st.selectbox(
@@ -488,12 +501,19 @@ alineado = d_abs <= tol
 dist_perp = calcular_distancia(PC, proj)
 dist_AB = calcular_distancia(A, B)
 
-# Calculate division points
-puntos_division = dividir_segmento(A, B, num_divisions)
-longitud_entre_puntos = dist_AB / num_divisions
+# Calculate division points - SOLO SI num_divisions > 0
+if num_divisions > 0:
+    puntos_division = dividir_segmento(A, B, num_divisions)
+    longitud_entre_puntos = dist_AB / num_divisions
+else:
+    puntos_division = []
+    longitud_entre_puntos = 0
 
-# Create DataFrame for division points
-df_division = crear_dataframe_division(puntos_division, A)
+# Create DataFrame for division points - SOLO SI HAY DIVISIONES
+if num_divisions > 0:
+    df_division = crear_dataframe_division(puntos_division, A)
+else:
+    df_division = pd.DataFrame(columns=["Punto", "X", "Y", "Distancia desde A (m)"])
 
 # Prepare results dictionary
 resultados = {
@@ -579,15 +599,18 @@ with col2:
     
     # Division results
     st.subheader("📏 División del Segmento AB")
-    st.markdown('<div class="division-box">', unsafe_allow_html=True)
-    st.write(f"**Segmento dividido en:** {num_divisions} partes iguales")
-    st.write(f"**Longitud entre puntos:** {longitud_entre_puntos:.3f} m")
-    st.write(f"**Total de puntos:** {len(puntos_division)}")
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Division points table
-    st.subheader("📋 Tabla de Puntos de División")
-    st.dataframe(df_division, use_container_width=True, height=400)
+    if num_divisions > 0:
+        st.markdown('<div class="division-box">', unsafe_allow_html=True)
+        st.write(f"**Segmento dividido en:** {num_divisions} partes iguales")
+        st.write(f"**Longitud entre puntos:** {longitud_entre_puntos:.3f} m")
+        st.write(f"**Total de puntos:** {len(puntos_division)}")
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Division points table
+        st.subheader("📋 Tabla de Puntos de División")
+        st.dataframe(df_division, use_container_width=True, height=400)
+    else:
+        st.info("ℹ️ No hay divisiones activas. Ingrese un número mayor a 0 para dividir el segmento.")
 
 # Export section - MOVED AFTER CALCULATIONS
 st.sidebar.markdown("---")
