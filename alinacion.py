@@ -80,7 +80,7 @@ st.markdown("""
     /* Controles de Plotly - Fondo negro para mejor contraste */
     .modebar {
         position: absolute !important;
-        top: 40px !important;
+        top: 30px !important;
         right: 15px !important;
         z-index: 1000 !important;
     }
@@ -683,4 +683,5 @@ with st.expander("📜 Ver Historial de Cálculos (Sesión Actual)"):
 st.markdown("---")
 st.markdown("*Herramienta mejorada para verificación de alineación topográfica y división de segmentos*")
 st.markdown("**Versión 2.0** - Con exportación de datos, gráficos interactivos y caché optimizado")
+
 
