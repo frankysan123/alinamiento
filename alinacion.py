@@ -248,7 +248,11 @@ def exportar_excel(df_division, resultados):
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         # Hoja de puntos de división
-        df_division.to_excel(writer, sheet_name='Puntos División', index=False)
+        if not df_division.empty:
+            df_division.to_excel(writer, sheet_name='Puntos División', index=False)
+        else:
+            # Crear un DataFrame vacío con las columnas correctas para evitar errores
+            pd.DataFrame(columns=["Punto", "X", "Y", "Distancia desde A (m)"]).to_excel(writer, sheet_name='Puntos División', index=False)
         
         # Hoja de resultados
         df_resultados = pd.DataFrame([resultados])
@@ -729,6 +733,7 @@ with st.expander("📜 Ver Historial de Cálculos (Sesión Actual)"):
 st.markdown("---")
 st.markdown("*Herramienta mejorada para verificación de alineación topográfica y división de segmentos*")
 st.markdown("**Versión 2.0** - Con exportación de datos, gráficos interactivos y caché optimizado")
+
 
 
 
