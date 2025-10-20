@@ -244,22 +244,36 @@ def crear_dataframe_division(puntos_division, A):
     return pd.DataFrame(data)
 
 def exportar_excel(df_division, resultados):
-    """Exporta datos a Excel con múltiples hojas"""
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        # Hoja de puntos de división
-        if not df_division.empty:
-            df_division.to_excel(writer, sheet_name='Puntos División', index=False)
-        else:
-            # Crear un DataFrame vacío con las columnas correctas para evitar errores
-            pd.DataFrame(columns=["Punto", "X", "Y", "Distancia desde A (m)"]).to_excel(writer, sheet_name='Puntos División', index=False)
+    """Exporta datos a Excel con múltiples hojas, manejando casos vacíos y errores"""
+    try:
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            # Hoja de puntos de división
+            if df_division is None or df_division.empty:
+                # Crear DataFrame vacío con columnas esperadas
+                pd.DataFrame(columns=["Punto", "X", "Y", "Distancia desde A (m)"]).to_excel(
+                    writer, sheet_name='Puntos División', index=False
+                )
+            else:
+                # Asegurarse de que df_division tenga las columnas correctas
+                expected_columns = ["Punto", "X", "Y", "Distancia desde A (m)"]
+                if not all(col in df_division.columns for col in expected_columns):
+                    raise ValueError("El DataFrame df_division no tiene las columnas esperadas")
+                df_division.to_excel(writer, sheet_name='Puntos División', index=False)
+            
+            # Hoja de resultados
+            if resultados is None:
+                raise ValueError("El diccionario resultados es None")
+            df_resultados = pd.DataFrame([resultados])
+            # Asegurarse de que no haya valores problemáticos (NaN, None)
+            df_resultados = df_resultados.fillna(0)  # Reemplazar NaN con 0 si es necesario
+            df_resultados.to_excel(writer, sheet_name='Resultados', index=False)
         
-        # Hoja de resultados
-        df_resultados = pd.DataFrame([resultados])
-        df_resultados.to_excel(writer, sheet_name='Resultados', index=False)
-    
-    output.seek(0)
-    return output
+        output.seek(0)
+        return output
+    except Exception as e:
+        st.error(f"Error al generar el archivo Excel: {str(e)}")
+        return None
 
 def crear_grafico_plotly(A, B, PC, proj, puntos_division, d_signed, dist_perp, num_divisions):
     """Crea gráfico interactivo con Plotly optimizado para móvil"""
@@ -741,6 +755,7 @@ with st.expander("📜 Ver Historial de Cálculos (Sesión Actual)"):
 st.markdown("---")
 st.markdown("*Herramienta mejorada para verificación de alineación topográfica y división de segmentos*")
 st.markdown("**Versión 2.0** - Con exportación de datos, gráficos interactivos y caché optimizado")
+
 
 
 
