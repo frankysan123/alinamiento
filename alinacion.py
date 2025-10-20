@@ -244,18 +244,18 @@ def crear_dataframe_division(puntos_division, A):
     return pd.DataFrame(data)
 
 def exportar_excel(df_division, resultados):
-    """Exporta datos a Excel con múltiples hojas, manejando casos vacíos y errores"""
+    """Exporta datos a Excel con múltiples hojas, manejando casos vacíos"""
     try:
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
             # Hoja de puntos de división
             if df_division is None or df_division.empty:
-                # Crear DataFrame vacío con columnas esperadas
+                # Crear DataFrame vacío con columnas correctas
                 pd.DataFrame(columns=["Punto", "X", "Y", "Distancia desde A (m)"]).to_excel(
                     writer, sheet_name='Puntos División', index=False
                 )
             else:
-                # Asegurarse de que df_division tenga las columnas correctas
+                # Verificar que las columnas esperadas existan
                 expected_columns = ["Punto", "X", "Y", "Distancia desde A (m)"]
                 if not all(col in df_division.columns for col in expected_columns):
                     raise ValueError("El DataFrame df_division no tiene las columnas esperadas")
@@ -265,7 +265,6 @@ def exportar_excel(df_division, resultados):
             if resultados is None:
                 raise ValueError("El diccionario resultados es None")
             df_resultados = pd.DataFrame([resultados])
-            # Asegurarse de que no haya valores problemáticos (NaN, None)
             df_resultados = df_resultados.fillna(0)  # Reemplazar NaN con 0 si es necesario
             df_resultados.to_excel(writer, sheet_name='Resultados', index=False)
         
@@ -498,64 +497,8 @@ with st.sidebar:
     st.markdown("---")
     formato_export = st.selectbox(
         "💾 Formato de exportación",
-        ["Excel (.xlsx)", "CSV (.csv)", "JSON (.json)""Texto (.txt)"]
+        ["Excel (.xlsx)", "CSV (.csv)", "JSON (.json)", "Texto (.txt)"]
     )
-    # Export section
-# Export section
-# Export section
-st.sidebar.markdown("---")
-st.sidebar.subheader("📥 Descargar Resultados")
-
-if formato_export == "Excel (.xlsx)":
-    excel_data = exportar_excel(df_division, resultados)
-    if excel_data is not None:
-        st.sidebar.download_button(
-            label="📥 Descargar Excel",
-            data=excel_data,
-            file_name=f"topo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            use_container_width=True
-        )
-    else:
-        st.sidebar.error("⚠️ No se pudo generar el archivo Excel. Revisa los datos de entrada.")
-elif formato_export == "CSV (.csv)":
-    if df_division.empty:
-        st.sidebar.warning("⚠️ No hay datos de división para exportar. Asegúrate de especificar un número de divisiones mayor a 0.")
-    else:
-        csv_data = df_division.to_csv(index=False)
-        st.sidebar.download_button(
-            label="📥 Descargar CSV",
-            data=csv_data,
-            file_name=f"topo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-            mime="text/csv",
-            use_container_width=True
-        )
-elif formato_export == "JSON (.json)":
-    if df_division.empty:
-        st.sidebar.warning("⚠️ No hay datos de división para exportar. Asegúrate de especificar un número de divisiones mayor a 0.")
-    else:
-        json_data = df_division.to_json(orient='records', indent=2)
-        st.sidebar.download_button(
-            label="📥 Descargar JSON",
-            data=json_data,
-            file_name=f"topo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
-            mime="application/json",
-            use_container_width=True
-        )
-else:  # Texto (.txt)
-    if df_division.empty:
-        st.sidebar.warning("⚠️ No hay datos de división para exportar. Asegúrate de especificar un número de divisiones mayor a 0.")
-    else:
-        text_data = "Punto,X,Y\n"  # Encabezado
-        for _, row in df_division.iterrows():
-            text_data += f"{row['Punto']},{row['X']},{row['Y']}\n"
-        st.sidebar.download_button(
-            label="📥 Descargar Texto",
-            data=text_data,
-            file_name=f"topo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
-            mime="text/plain",
-            use_container_width=True
-        )
 
 # --- Calculations ---
 A = (xA, yA)
@@ -692,31 +635,54 @@ st.sidebar.subheader("📥 Descargar Resultados")
 
 if formato_export == "Excel (.xlsx)":
     excel_data = exportar_excel(df_division, resultados)
-    st.sidebar.download_button(
-        label="📥 Descargar Excel",
-        data=excel_data,
-        file_name=f"topo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        use_container_width=True
-    )
+    if excel_data is not None:
+        st.sidebar.download_button(
+            label="📥 Descargar Excel",
+            data=excel_data,
+            file_name=f"topo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True
+        )
+    else:
+        st.sidebar.error("⚠️ No se pudo generar el archivo Excel. Revisa los datos de entrada.")
 elif formato_export == "CSV (.csv)":
-    csv_data = df_division.to_csv(index=False)
-    st.sidebar.download_button(
-        label="📥 Descargar CSV",
-        data=csv_data,
-        file_name=f"topo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-        mime="text/csv",
-        use_container_width=True
-    )
-else:  # JSON
-    json_data = df_division.to_json(orient='records', indent=2)
-    st.sidebar.download_button(
-        label="📥 Descargar JSON",
-        data=json_data,
-        file_name=f"topo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
-        mime="application/json",
-        use_container_width=True
-    )
+    if df_division.empty:
+        st.sidebar.warning("⚠️ No hay datos de división para exportar. Asegúrate de especificar un número de divisiones mayor a 0.")
+    else:
+        csv_data = df_division.to_csv(index=False)
+        st.sidebar.download_button(
+            label="📥 Descargar CSV",
+            data=csv_data,
+            file_name=f"topo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+            mime="text/csv",
+            use_container_width=True
+        )
+elif formato_export == "JSON (.json)":
+    if df_division.empty:
+        st.sidebar.warning("⚠️ No hay datos de división para exportar. Asegúrate de especificar un número de divisiones mayor a 0.")
+    else:
+        json_data = df_division.to_json(orient='records', indent=2)
+        st.sidebar.download_button(
+            label="📥 Descargar JSON",
+            data=json_data,
+            file_name=f"topo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+            mime="application/json",
+            use_container_width=True
+        )
+else:  # Texto (.txt)
+    if df_division.empty:
+        st.sidebar.warning("⚠️ No hay datos de división para exportar. Asegúrate de especificar un número de divisiones mayor a 0.")
+    else:
+        text_data = "Punto,X,Y\n"  # Encabezado
+        for _, row in df_division.iterrows():
+            text_data += f"{row['Punto']},{row['X']},{row['Y']}\n"
+        st.sidebar.download_button(
+            label="📥 Descargar Texto",
+            data=text_data,
+            file_name=f"topo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
+            mime="text/plain",
+            use_container_width=True
+        )
 
 # Additional information
 st.markdown("---")
@@ -757,11 +723,3 @@ with st.expander("📜 Ver Historial de Cálculos (Sesión Actual)"):
 st.markdown("---")
 st.markdown("*Herramienta mejorada para verificación de alineación topográfica y división de segmentos*")
 st.markdown("**Versión 2.0** - Con exportación de datos, gráficos interactivos y caché optimizado")
-
-
-
-
-
-
-
-
