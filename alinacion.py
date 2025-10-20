@@ -480,8 +480,54 @@ with st.sidebar:
     st.markdown("---")
     formato_export = st.selectbox(
         "💾 Formato de exportación",
-        ["Excel (.xlsx)", "CSV (.csv)", "JSON (.json)"]
+        ["Excel (.xlsx)", "CSV (.csv)", "JSON (.json)""Texto (.txt)"]
     )
+    # Export section
+st.sidebar.markdown("---")
+st.sidebar.subheader("📥 Descargar Resultados")
+
+if formato_export == "Excel (.xlsx)":
+    excel_data = exportar_excel(df_division, resultados)
+    st.sidebar.download_button(
+        label="📥 Descargar Excel",
+        data=excel_data,
+        file_name=f"topo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        use_container_width=True
+    )
+elif formato_export == "CSV (.csv)":
+    csv_data = df_division.to_csv(index=False)
+    st.sidebar.download_button(
+        label="📥 Descargar CSV",
+        data=csv_data,
+        file_name=f"topo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+        mime="text/csv",
+        use_container_width=True
+    )
+elif formato_export == "JSON (.json)":
+    json_data = df_division.to_json(orient='records', indent=2)
+    st.sidebar.download_button(
+        label="📥 Descargar JSON",
+        data=json_data,
+        file_name=f"topo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+        mime="application/json",
+        use_container_width=True
+    )
+else:  # Texto (.txt)
+    # Generar contenido del archivo de texto
+    if not df_division.empty:
+        text_data = "Punto,X,Y\n"  # Encabezado
+        for _, row in df_division.iterrows():
+            text_data += f"{row['Punto']},{row['X']},{row['Y']}\n"
+        st.sidebar.download_button(
+            label="📥 Descargar Texto",
+            data=text_data,
+            file_name=f"topo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
+            mime="text/plain",
+            use_container_width=True
+        )
+    else:
+        st.sidebar.warning("⚠️ No hay datos de división para exportar. Asegúrate de especificar un número de divisiones mayor a 0.")
 
 # --- Calculations ---
 A = (xA, yA)
@@ -683,6 +729,7 @@ with st.expander("📜 Ver Historial de Cálculos (Sesión Actual)"):
 st.markdown("---")
 st.markdown("*Herramienta mejorada para verificación de alineación topográfica y división de segmentos*")
 st.markdown("**Versión 2.0** - Con exportación de datos, gráficos interactivos y caché optimizado")
+
 
 
 
