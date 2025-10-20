@@ -502,20 +502,22 @@ with st.sidebar:
     )
     # Export section
 # Export section
+# Export section
 st.sidebar.markdown("---")
 st.sidebar.subheader("📥 Descargar Resultados")
 
 if formato_export == "Excel (.xlsx)":
-    if num_divisions == 0:
-        st.sidebar.warning("⚠️ No hay datos de división para exportar. El archivo Excel contendrá solo la hoja de resultados.")
     excel_data = exportar_excel(df_division, resultados)
-    st.sidebar.download_button(
-        label="📥 Descargar Excel",
-        data=excel_data,
-        file_name=f"topo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        use_container_width=True
-    )
+    if excel_data is not None:
+        st.sidebar.download_button(
+            label="📥 Descargar Excel",
+            data=excel_data,
+            file_name=f"topo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True
+        )
+    else:
+        st.sidebar.error("⚠️ No se pudo generar el archivo Excel. Revisa los datos de entrada.")
 elif formato_export == "CSV (.csv)":
     if df_division.empty:
         st.sidebar.warning("⚠️ No hay datos de división para exportar. Asegúrate de especificar un número de divisiones mayor a 0.")
@@ -755,6 +757,7 @@ with st.expander("📜 Ver Historial de Cálculos (Sesión Actual)"):
 st.markdown("---")
 st.markdown("*Herramienta mejorada para verificación de alineación topográfica y división de segmentos*")
 st.markdown("**Versión 2.0** - Con exportación de datos, gráficos interactivos y caché optimizado")
+
 
 
 
