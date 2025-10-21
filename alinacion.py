@@ -239,7 +239,7 @@ def crear_dataframe_division(puntos_division, A):
     for i, punto in enumerate(puntos_division):
         distancia_desde_A = calcular_distancia(A, punto)
         data.append({
-            "Punto": f"P{i}",
+            "Punto": str(i),  # Cambiado de f"P{i}" a str(i) para eliminar la "P"
             "X": round(punto[0], 3),
             "Y": round(punto[1], 3),
             "Distancia desde A (m)": round(distancia_desde_A, 3)
@@ -305,7 +305,7 @@ def crear_grafico_plotly(A, B, PC, proj, puntos_division, d_signed, dist_perp, n
         division_y = [p[1] for p in puntos_division]
         
         if len(puntos_division) <= 15:
-            division_labels = [f'P{i}' for i in range(len(puntos_division))]
+            division_labels = [str(i) for i in range(len(puntos_division))]  # Cambiado a str(i)
             mode = 'markers+text'
             textposition = 'top center'
         else:
@@ -322,7 +322,7 @@ def crear_grafico_plotly(A, B, PC, proj, puntos_division, d_signed, dist_perp, n
             text=division_labels,
             textposition=textposition,
             textfont=dict(size=9),
-            hovertemplate='<b>P%{pointNumber}</b><br>X: %{x:.3f}<br>Y: %{y:.3f}<extra></extra>'
+            hovertemplate='<b>Punto %{pointNumber}</b><br>X: %{x:.3f}<br>Y: %{y:.3f}<extra></extra>'
         ))
     
     # Punto A
@@ -696,8 +696,8 @@ with col3:
 
 with col4:
     st.write("**División:**")
-    st.write(f"- P0 = Punto A")
-    st.write(f"- P{num_divisions} = Punto B")
+    st.write(f"- 0 = Punto A")
+    st.write(f"- {num_divisions} = Punto B")
     st.write(f"- Cada segmento: {longitud_entre_puntos:.3f} m")
 
 with col5:
@@ -707,7 +707,7 @@ with col5:
     st.write("- Exporte datos para reportes")
 
 # Calculation history
-with st.expander("📜 Ver Historial de Cálculos (Sesión Actual)"):
+with st.expander("📜 Ver Historial de Cálculos (Sesión Natural)"):
     if len(st.session_state.calculation_history) > 0:
         df_history = pd.DataFrame(st.session_state.calculation_history)
         st.dataframe(df_history, use_container_width=True)
