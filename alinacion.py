@@ -223,7 +223,10 @@ def dividir_segmento(A, B, num_partes):
     return puntos
 
 def validar_coordenada(valor, nombre):
-    """Valida que el valor sea numérico"""
+    """Valida que el valor sea numérico y no esté vacío"""
+    if valor is None or valor.strip() == "":
+        st.error(f"❌ Error: {nombre} no puede estar vacío")
+        st.stop()
     try:
         return float(valor)
     except (ValueError, TypeError):
@@ -250,12 +253,10 @@ def exportar_excel(df_division, resultados):
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
             # Hoja de puntos de división
             if df_division is None or df_division.empty:
-                # Crear DataFrame vacío con columnas correctas
                 pd.DataFrame(columns=["Punto", "X", "Y", "Distancia desde A (m)"]).to_excel(
                     writer, sheet_name='Puntos División', index=False
                 )
             else:
-                # Verificar que las columnas esperadas existan
                 expected_columns = ["Punto", "X", "Y", "Distancia desde A (m)"]
                 if not all(col in df_division.columns for col in expected_columns):
                     raise ValueError("El DataFrame df_division no tiene las columnas esperadas")
@@ -265,7 +266,7 @@ def exportar_excel(df_division, resultados):
             if resultados is None:
                 raise ValueError("El diccionario resultados es None")
             df_resultados = pd.DataFrame([resultados])
-            df_resultados = df_resultados.fillna(0)  # Reemplazar NaN con 0 si es necesario
+            df_resultados = df_resultados.fillna(0)
             df_resultados.to_excel(writer, sheet_name='Resultados', index=False)
         
         output.seek(0)
@@ -303,7 +304,6 @@ def crear_grafico_plotly(A, B, PC, proj, puntos_division, d_signed, dist_perp, n
         division_x = [p[0] for p in puntos_division]
         division_y = [p[1] for p in puntos_division]
         
-        # Optimización: Mostrar etiquetas solo si hay menos de 15 puntos
         if len(puntos_division) <= 15:
             division_labels = [f'P{i}' for i in range(len(puntos_division))]
             mode = 'markers+text'
@@ -400,7 +400,6 @@ def crear_grafico_plotly(A, B, PC, proj, puntos_division, d_signed, dist_perp, n
         margin=dict(l=20, r=80, t=80, b=100),
         yaxis=dict(scaleanchor="x", scaleratio=1),
         dragmode='pan',
-        # Optimización para móvil
         autosize=True,
         plot_bgcolor='rgba(240,240,240,0.5)'
     )
@@ -408,7 +407,6 @@ def crear_grafico_plotly(A, B, PC, proj, puntos_division, d_signed, dist_perp, n
     fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='rgba(200,200,200,0.5)')
     fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='rgba(200,200,200,0.5)')
     
-    # Configuración MEJORADA de controles - Más grandes y mejor posicionados
     config = {
         'displayModeBar': True,
         'displaylogo': False,
@@ -421,12 +419,10 @@ def crear_grafico_plotly(A, B, PC, proj, puntos_division, d_signed, dist_perp, n
             'width': 1400,
             'scale': 2
         },
-        # FONDO NEGRO Y CONFIGURACIÓN DE COLORES
         'modeBarStyle': {
             'bgcolor': 'rgba(30, 30, 30, 0.95)',
             'color': 'white'
         },
-        # Controles más grandes
         'modeBarButtonSize': 20,
         'doubleClick': 'reset',
         'scrollZoom': True
@@ -438,7 +434,6 @@ def crear_grafico_plotly(A, B, PC, proj, puntos_division, d_signed, dist_perp, n
 with st.sidebar:
     st.header("🔧 Parámetros de Entrada")
     
-    # Modo de entrada
     modo_entrada = st.radio(
         "Modo de entrada de datos",
         ["Manual", "Cargar desde archivo CSV"],
@@ -501,13 +496,25 @@ with st.sidebar:
     )
 
 # --- Calculations ---
+# Depuración para verificar las coordenadas
+st.write("Debug: Coordenadas de entrada")
+st.write(f"A: ({xA}, {yA})")
+st.write(f"B: ({xB}, {yB})")
+st.write(f"PC: ({xPC}, {yPC})")
+
 A = (xA, yA)
 B = (xB, yB)
 PC = (xPC, yPC)
 
 # Validate that A and B are not the same point
-if calcular_distancia(A, B) < 0.001:
-    st.error("❌ Los puntos A y B son demasiado cercanos o iguales. Por favor, ingrese puntos distintos.")
+try:
+    distancia_AB = calcular_distancia(A, B)
+    st.write(f"Debug: Distancia entre A y B: {distancia_AB}")
+    if distancia_AB < 0.001:
+        st.error("❌ Los puntos A y B son demasiado cercanos o iguales. Por favor, ingrese puntos distintos.")
+        st.stop()
+except Exception as e:
+    st.error(f"Error al calcular la distancia entre A y B: {str(e)}")
     st.stop()
 
 d_signed = distancia_perpendicular(A, B, PC)
@@ -518,7 +525,7 @@ alineado = d_abs <= tol
 dist_perp = calcular_distancia(PC, proj)
 dist_AB = calcular_distancia(A, B)
 
-# Calculate division points - SOLO SI num_divisions > 0
+# Calculate division points
 if num_divisions > 0:
     puntos_division = dividir_segmento(A, B, num_divisions)
     longitud_entre_puntos = dist_AB / num_divisions
@@ -526,7 +533,7 @@ else:
     puntos_division = []
     longitud_entre_puntos = 0
 
-# Create DataFrame for division points - SOLO SI HAY DIVISIONES
+# Create DataFrame for division points
 if num_divisions > 0:
     df_division = crear_dataframe_division(puntos_division, A)
 else:
@@ -559,11 +566,9 @@ col1, col2 = st.columns([1.4, 1])
 with col1:
     st.subheader("📈 Visualización Gráfica Interactiva")
     
-    # Create interactive Plotly chart
     fig, config = crear_grafico_plotly(A, B, PC, proj, puntos_division, d_signed, dist_perp, num_divisions)
     st.plotly_chart(fig, use_container_width=True, config=config)
     
-    # Instrucciones de uso
     with st.expander("ℹ️ Cómo usar los controles del gráfico"):
         st.markdown("""
         **Controles disponibles:**
@@ -580,7 +585,6 @@ with col1:
 with col2:
     st.subheader("📊 Resultados de Alineación")
     
-    # Distance results
     with st.container():
         st.markdown('<div class="result-box">', unsafe_allow_html=True)
         col_m1, col_m2 = st.columns(2)
@@ -590,7 +594,6 @@ with col2:
             st.metric("Distancia AB", f"{dist_AB:.3f} m")
         st.markdown('</div>', unsafe_allow_html=True)
     
-    # Position indicator
     if alineado:
         st.markdown('<div class="success-box">', unsafe_allow_html=True)
         st.success(f"✅ **PC está ALINEADO** con AB (tolerancia: {tol} m)")
@@ -600,7 +603,6 @@ with col2:
         st.warning(f"⚠️ **PC NO está alineado** con AB (tolerancia: {tol} m)")
         st.markdown('</div>', unsafe_allow_html=True)
     
-    # Direction indicator
     if d_signed > 0:
         st.info(f"📍 **PC está a la DERECHA** de AB ({d_signed:.3f} m)")
     elif d_signed < 0:
@@ -608,13 +610,11 @@ with col2:
     else:
         st.info("🎯 **PC está exactamente sobre** la línea AB")
     
-    # Projection details
     with st.expander("📐 Ver Detalles de Proyección"):
         st.write(f"**Coordenadas de proyección:** ({proj[0]:.3f}, {proj[1]:.3f})")
         st.write(f"**Vector de corrección:** ΔX = {corr_vector[0]:.3f} m, ΔY = {corr_vector[1]:.3f} m")
         st.write(f"**Magnitud corrección:** {np.linalg.norm(corr_vector):.3f} m")
     
-    # Division results
     st.subheader("📏 División del Segmento AB")
     if num_divisions > 0:
         st.markdown('<div class="division-box">', unsafe_allow_html=True)
@@ -623,13 +623,12 @@ with col2:
         st.write(f"**Total de puntos:** {len(puntos_division)}")
         st.markdown('</div>', unsafe_allow_html=True)
         
-        # Division points table
         st.subheader("📋 Tabla de Puntos de División")
         st.dataframe(df_division, use_container_width=True, height=400)
     else:
         st.info("ℹ️ No hay divisiones activas. Ingrese un número mayor a 0 para dividir el segmento.")
 
-# Export section - MOVED AFTER CALCULATIONS
+# Export section
 st.sidebar.markdown("---")
 st.sidebar.subheader("📥 Descargar Resultados")
 
@@ -673,7 +672,7 @@ else:  # Texto (.txt)
     if df_division.empty:
         st.sidebar.warning("⚠️ No hay datos de división para exportar. Asegúrate de especificar un número de divisiones mayor a 0.")
     else:
-        text_data = "Punto,X,Y\n"  # Encabezado
+        text_data = "Punto,X,Y\n"
         for _, row in df_division.iterrows():
             text_data += f"{row['Punto']},{row['X']},{row['Y']}\n"
         st.sidebar.download_button(
